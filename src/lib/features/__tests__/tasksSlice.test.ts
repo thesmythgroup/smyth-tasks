@@ -1,6 +1,6 @@
 import tasksReducer, {
   addTask,
-  toggleTask,
+  updateTask,
   removeTask,
   setTasks,
   clearTasks,
@@ -12,6 +12,7 @@ const mockTask: Task = {
   title: "Test Task",
   completed: false,
   userId: "user1",
+  tagIds: [],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -33,13 +34,30 @@ describe("tasksSlice", () => {
     expect(actual.items[0]).toEqual(mockTask);
   });
 
-  it("should handle toggleTask", () => {
+  it("should handle updateTask to toggle completed", () => {
     const state = {
       ...initialState,
       items: [mockTask],
     };
-    const actual = tasksReducer(state, toggleTask(mockTask.id));
+    const actual = tasksReducer(
+      state,
+      updateTask({ id: mockTask.id, completed: true })
+    );
     expect(actual.items[0].completed).toBe(true);
+    expect(actual.items[0].updatedAt).toBeDefined();
+  });
+
+  it("should handle updateTask to update tagIds", () => {
+    const state = {
+      ...initialState,
+      items: [mockTask],
+    };
+    const actual = tasksReducer(
+      state,
+      updateTask({ id: mockTask.id, tagIds: ["tag1", "tag2"] })
+    );
+    expect(actual.items[0].tagIds).toEqual(["tag1", "tag2"]);
+    expect(actual.items[0].updatedAt).toBeDefined();
   });
 
   it("should handle removeTask", () => {

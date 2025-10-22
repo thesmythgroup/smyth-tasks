@@ -24,13 +24,6 @@ export const tasksSlice = createSlice({
         };
       }
     },
-    toggleTask: (state, action: PayloadAction<string>) => {
-      const task = state.items.find((t) => t.id === action.payload);
-      if (task) {
-        task.completed = !task.completed;
-        task.updatedAt = new Date().toISOString();
-      }
-    },
     removeTask: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter((task) => task.id !== action.payload);
     },
@@ -54,7 +47,6 @@ export const tasksSlice = createSlice({
 export const {
   addTask,
   updateTask,
-  toggleTask,
   removeTask,
   setTasks,
   setLoading,
