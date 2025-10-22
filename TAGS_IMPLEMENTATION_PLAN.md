@@ -32,7 +32,7 @@
   - Update `RootState` to include tags slice
   - Add predefined color constants/types
 
-- [ ] **1.2** Create tags Redux slice `src/lib/features/tagsSlice.ts`
+- [x] **1.2** Create tags Redux slice `src/lib/features/tagsSlice.ts` ✅
 
   - Initial state with items, loading, error
   - Reducers: addTag, updateTag, removeTag, setTags, setLoading, setError, clearTags
