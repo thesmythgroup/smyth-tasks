@@ -24,7 +24,7 @@
 
 ### Phase 1: Core Data Layer ⏳
 
-- [ ] **1.1** Update types in `src/lib/types/index.ts`
+- [x] **1.1** Update types in `src/lib/types/index.ts` ✅
 
   - Add `Tag` interface (id, name, color, createdAt, updatedAt)
   - Add `TagsState` interface (items, loading, error)
@@ -203,5 +203,6 @@ Predefined color palette (can be adjusted):
 
 ## Current Status
 
-**Phase:** Not Started
-**Last Updated:** [Will be updated as work progresses]
+**Phase:** Phase 1 - Core Data Layer (In Progress)
+**Last Updated:** Phase 1.1 Complete - Types updated
+**Next:** Phase 1.2 - Create tags Redux slice
