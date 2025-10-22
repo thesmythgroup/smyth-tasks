@@ -13,7 +13,7 @@ export function LoadingSpinner({ size = "md" }: LoadingSpinnerProps) {
     <div className="flex justify-center items-center">
       <div
         role="status"
-        className={`${sizeClasses[size]} animate-spin rounded-full border-4 border-gray-200 border-t-blue-500`}
+        className={`${sizeClasses[size]} animate-spin rounded-full border-4 border-gray-600 border-t-blue-500`}
       >
         <span className="sr-only">Loading...</span>
       </div>

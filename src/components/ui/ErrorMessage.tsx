@@ -4,7 +4,7 @@ interface ErrorMessageProps {
 
 export function ErrorMessage({ message }: ErrorMessageProps) {
   return (
-    <div className="rounded-md bg-red-50 p-4 my-4">
+    <div className="rounded-md bg-red-900/50 border border-red-700 p-4 my-4">
       <div className="flex">
         <div className="shrink-0">
           <svg
@@ -20,7 +20,7 @@ export function ErrorMessage({ message }: ErrorMessageProps) {
           </svg>
         </div>
         <div className="ml-3">
-          <p className="text-sm font-medium text-red-800">{message}</p>
+          <p className="text-sm font-medium text-red-300">{message}</p>
         </div>
       </div>
     </div>

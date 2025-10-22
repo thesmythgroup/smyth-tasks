@@ -16,7 +16,7 @@ export function TaskList() {
   if (!isAuthenticated) {
     return (
       <div className="text-center py-10">
-        <h2 className="text-2xl font-semibold text-gray-700">
+        <h2 className="text-2xl font-semibold text-gray-300">
           Please login to manage your tasks
         </h2>
       </div>
@@ -45,7 +45,7 @@ export function TaskList() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="text-center text-gray-500"
+              className="text-center text-gray-400"
             >
               No tasks yet. Add one above!
             </motion.p>

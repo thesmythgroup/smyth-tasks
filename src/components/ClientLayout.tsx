@@ -13,8 +13,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         toastOptions={{
           duration: 3000,
           style: {
-            background: "#363636",
-            color: "#fff",
+            background: "#1F2937", // gray-800
+            color: "#F3F4F6", // gray-100
+            border: "1px solid #374151", // gray-700
           },
         }}
       />

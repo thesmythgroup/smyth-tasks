@@ -1,5 +1,10 @@
+import { Layout } from "@/components/Layout";
 import { ClientPage } from "@/components/ClientPage";
 
 export default function Home() {
-  return <ClientPage />;
+  return (
+    <Layout>
+      <ClientPage />
+    </Layout>
+  );
 }
