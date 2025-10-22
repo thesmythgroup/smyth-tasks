@@ -71,7 +71,7 @@ export const getPriorityStyles = (priority: PriorityLevel | string | number) => 
 
 export const getPriorityFilterStyles = (priority: PriorityLevel, isActive: boolean) => {
   const info = PRIORITY_LEVELS[priority];
-  const baseStyles = "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200";
+  const baseStyles = "px-5 py-3 rounded-lg text-sm font-medium transition-all duration-200";
   
   if (isActive) {
     switch (info.color) {
@@ -87,4 +87,16 @@ export const getPriorityFilterStyles = (priority: PriorityLevel, isActive: boole
   }
   
   return `${baseStyles} bg-gray-700 text-gray-300 hover:bg-gray-600`;
+};
+
+export const getPriorityFilterInlineStyles = () => {
+  return {
+    paddingLeft: '1.25rem',
+    paddingRight: '1.25rem',
+    paddingTop: '0.75rem',
+    paddingBottom: '0.75rem',
+    borderRadius: '0.5rem',
+    fontSize: '0.875rem',
+    fontWeight: '500'
+  };
 };
