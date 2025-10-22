@@ -31,6 +31,7 @@ describe("AddTaskForm", () => {
     expect(
       screen.getByPlaceholderText("Add a new task...")
     ).toBeInTheDocument();
+    expect(screen.getByDisplayValue(/\d{4}-\d{2}-\d{2}/)).toBeInTheDocument();
     expect(screen.getByText("Add Task")).toBeInTheDocument();
   });
 
@@ -53,15 +54,18 @@ describe("AddTaskForm", () => {
     });
 
     const input = screen.getByPlaceholderText("Add a new task...");
+    const dateInput = screen.getByDisplayValue(/\d{4}-\d{2}-\d{2}/);
     const submitButton = screen.getByText("Add Task");
 
     fireEvent.change(input, { target: { value: "New Test Task" } });
+    fireEvent.change(dateInput, { target: { value: "2025-12-31" } });
     fireEvent.click(submitButton);
 
     expect(mockAddTask).toHaveBeenCalledWith({
       title: "New Test Task",
       completed: false,
       userId: mockUser.id,
+      dueDate: "2025-12-31",
     });
   });
 

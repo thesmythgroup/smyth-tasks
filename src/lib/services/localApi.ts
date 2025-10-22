@@ -6,6 +6,7 @@ import {
   removeTask,
   setTasks,
   toggleTask,
+  updateTaskDueDate,
   updateTaskPriority,
 } from "../features/tasksSlice";
 import { saveState, loadState } from "../utils/localStorage";
@@ -24,10 +25,10 @@ export const localApi = createApi({
         await delay(100);
         const state = loadState();
         const tasks = state?.tasks?.items || [];
-        
+
         // Migrate old string-based priorities to numeric IDs
-        const migratedTasks = tasks.map(task => {
-          if (typeof task.priority === 'string') {
+        const migratedTasks = tasks.map((task) => {
+          if (typeof task.priority === "string") {
             let priorityId: PriorityLevel;
             switch (task.priority) {
               case "ghost-pepper":
@@ -46,7 +47,7 @@ export const localApi = createApi({
           }
           return task;
         });
-        
+
         dispatch(setTasks(migratedTasks));
         return { data: migratedTasks };
       },
@@ -80,8 +81,18 @@ export const localApi = createApi({
         if ("completed" in update) {
           dispatch(toggleTask(update.id));
         }
+        if ("dueDate" in update) {
+          dispatch(
+            updateTaskDueDate({
+              id: update.id,
+              dueDate: update.dueDate || null,
+            })
+          );
+        }
         if ("priority" in update) {
-          dispatch(updateTaskPriority({ id: update.id, priority: update.priority! }));
+          dispatch(
+            updateTaskPriority({ id: update.id, priority: update.priority! })
+          );
         }
         const state = getState();
         saveState(state);
