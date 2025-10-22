@@ -8,8 +8,8 @@ import {
   updateTask,
 } from "../features/tasksSlice";
 import {
-  addTag,
-  removeTag,
+  addTag as addTagAction,
+  removeTag as removeTagAction,
   setTags,
   updateTag as updateTagAction,
 } from "../features/tagsSlice";
@@ -29,8 +29,13 @@ export const localApi = createApi({
         await delay(100);
         const state = loadState();
         const tasks = state?.tasks?.items || [];
-        dispatch(setTasks(tasks));
-        return { data: tasks };
+        // Migrate existing tasks to include tagIds if missing
+        const migratedTasks = tasks.map((task: Task) => ({
+          ...task,
+          tagIds: task.tagIds || [],
+        }));
+        dispatch(setTasks(migratedTasks));
+        return { data: migratedTasks };
       },
       providesTags: ["Task"],
     }),
@@ -125,7 +130,7 @@ export const localApi = createApi({
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
-        dispatch(addTag(newTag));
+        dispatch(addTagAction(newTag));
         const state = getState();
         saveState(state);
         return { data: newTag };
@@ -170,7 +175,7 @@ export const localApi = createApi({
         });
 
         // Remove the tag itself
-        dispatch(removeTag(tagId));
+        dispatch(removeTagAction(tagId));
         const newState = getState();
         saveState(newState);
         return { data: { success: true } };

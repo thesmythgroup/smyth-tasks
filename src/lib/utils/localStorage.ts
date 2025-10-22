@@ -16,6 +16,7 @@ export const loadState = () => {
     return {
       user: state.user || { currentUser: null, isAuthenticated: false },
       tasks: state.tasks || { items: [], loading: false, error: null },
+      tags: state.tags || { items: [], loading: false, error: null },
     };
   } catch (err) {
     console.error("Error loading state:", err);
@@ -23,17 +24,23 @@ export const loadState = () => {
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const saveState = (state: any) => {
   if (typeof window === "undefined") {
     return;
   }
 
   try {
-    // Only persist user and tasks data
+    // Persist user, tasks, and tags data
     const stateToPersist = {
       user: state.user,
       tasks: {
         items: state.tasks.items,
+        loading: false,
+        error: null,
+      },
+      tags: {
+        items: state.tags.items,
         loading: false,
         error: null,
       },
