@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import { RootState } from "@/lib/types";
+import { RootState, PriorityLevel } from "@/lib/types";
 import { useAddTaskMutation } from "@/lib/services/localApi";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { PRIORITY_LEVELS } from "@/lib/utils/priorityUtils";
 import toast from "react-hot-toast";
 
 export function AddTaskForm() {
   const [title, setTitle] = useState("");
+  const [priority, setPriority] = useState<PriorityLevel>(1); // Default to Jalapeño
   const [addTask, { isLoading }] = useAddTaskMutation();
   const { currentUser } = useSelector((state: RootState) => state.user);
 
@@ -20,10 +22,12 @@ export function AddTaskForm() {
       await addTask({
         title: title.trim(),
         completed: false,
+        priority,
         userId: currentUser.id,
       }).unwrap();
 
       setTitle("");
+      setPriority(1); // Reset to Jalapeño
       toast.success("Task added successfully");
     } catch (error) {
       toast.error("Failed to add task");
@@ -44,6 +48,18 @@ export function AddTaskForm() {
           disabled={isLoading}
           required
         />
+        <select
+          value={priority}
+          onChange={(e) => setPriority(Number(e.target.value) as PriorityLevel)}
+          className="rounded-lg bg-gray-700 border-2 border-gray-600 text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 py-3 px-4 text-base transition-all duration-200 hover:border-gray-500 min-w-[140px]"
+          disabled={isLoading}
+        >
+          {Object.values(PRIORITY_LEVELS).map((level) => (
+            <option key={level.id} value={level.id}>
+              {level.displayText}
+            </option>
+          ))}
+        </select>
         <button
           type="submit"
           disabled={isLoading}

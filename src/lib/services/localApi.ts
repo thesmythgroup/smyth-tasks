@@ -1,11 +1,12 @@
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
-import { Task, User } from "../types";
+import { Task, User, PriorityLevel } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import {
   addTask,
   removeTask,
   setTasks,
   toggleTask,
+  updateTaskPriority,
 } from "../features/tasksSlice";
 import { saveState, loadState } from "../utils/localStorage";
 
@@ -23,8 +24,31 @@ export const localApi = createApi({
         await delay(100);
         const state = loadState();
         const tasks = state?.tasks?.items || [];
-        dispatch(setTasks(tasks));
-        return { data: tasks };
+        
+        // Migrate old string-based priorities to numeric IDs
+        const migratedTasks = tasks.map(task => {
+          if (typeof task.priority === 'string') {
+            let priorityId: PriorityLevel;
+            switch (task.priority) {
+              case "ghost-pepper":
+                priorityId = 0;
+                break;
+              case "jalapeño":
+                priorityId = 1;
+                break;
+              case "minnesotan":
+                priorityId = 2;
+                break;
+              default:
+                priorityId = 1; // Default to Jalapeño
+            }
+            return { ...task, priority: priorityId };
+          }
+          return task;
+        });
+        
+        dispatch(setTasks(migratedTasks));
+        return { data: migratedTasks };
       },
       providesTags: ["Task"],
     }),
@@ -37,6 +61,7 @@ export const localApi = createApi({
         await delay(100);
         const newTask: Task = {
           ...task,
+          priority: task.priority ?? 1, // Default to Jalapeño (1)
           id: uuidv4(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -54,6 +79,9 @@ export const localApi = createApi({
         await delay(100);
         if ("completed" in update) {
           dispatch(toggleTask(update.id));
+        }
+        if ("priority" in update) {
+          dispatch(updateTaskPriority({ id: update.id, priority: update.priority! }));
         }
         const state = getState();
         saveState(state);

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Task, TasksState } from "../types";
+import { Task, TasksState, PriorityLevel } from "../types";
 
 const initialState: TasksState = {
   items: [],
@@ -18,6 +18,13 @@ export const tasksSlice = createSlice({
       const task = state.items.find((t) => t.id === action.payload);
       if (task) {
         task.completed = !task.completed;
+        task.updatedAt = new Date().toISOString();
+      }
+    },
+    updateTaskPriority: (state, action: PayloadAction<{ id: string; priority: PriorityLevel }>) => {
+      const task = state.items.find((t) => t.id === action.payload.id);
+      if (task) {
+        task.priority = action.payload.priority;
         task.updatedAt = new Date().toISOString();
       }
     },
@@ -44,6 +51,7 @@ export const tasksSlice = createSlice({
 export const {
   addTask,
   toggleTask,
+  updateTaskPriority,
   removeTask,
   setTasks,
   setLoading,
