@@ -4,6 +4,7 @@ import { configureStore, Store, combineReducers } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
 import userReducer from "../features/userSlice";
 import tasksReducer from "../features/tasksSlice";
+import tagsReducer from "../features/tagsSlice";
 import type { RootState } from "../types";
 
 type PartialRootState = Partial<RootState>;
@@ -11,6 +12,7 @@ type PartialRootState = Partial<RootState>;
 const rootReducer = combineReducers({
   user: userReducer,
   tasks: tasksReducer,
+  tags: tagsReducer,
   localApi: (state = {}) => state,
 });
 

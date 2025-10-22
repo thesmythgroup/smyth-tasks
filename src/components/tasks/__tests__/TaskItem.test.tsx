@@ -7,17 +7,24 @@ const mockTask = {
   title: "Test Task",
   completed: false,
   userId: "user1",
+  tagIds: [],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
 
-// Mock the mutations
+// Mock the mutations and queries
 const mockUpdateTask = jest.fn();
 const mockDeleteTask = jest.fn();
 
 jest.mock("@/lib/services/localApi", () => ({
+  useGetTagsQuery: () => ({
+    data: [],
+    isLoading: false,
+    refetch: jest.fn(),
+  }),
   useUpdateTaskMutation: () => [mockUpdateTask, { isLoading: false }],
   useDeleteTaskMutation: () => [mockDeleteTask, { isLoading: false }],
+  useAddTagMutation: () => [jest.fn(), { isLoading: false }],
 }));
 
 describe("TaskItem", () => {
@@ -55,5 +62,22 @@ describe("TaskItem", () => {
     fireEvent.click(deleteButton);
 
     expect(mockDeleteTask).toHaveBeenCalledWith(mockTask.id);
+  });
+
+  it("displays no tags message when task has no tags", () => {
+    render(<TaskItem task={mockTask} />);
+    expect(screen.getByText("No tags")).toBeInTheDocument();
+  });
+
+  it("toggles tag editing mode when edit button is clicked", () => {
+    render(<TaskItem task={mockTask} />);
+
+    const editButton = screen.getByText("Edit Tags");
+    fireEvent.click(editButton);
+
+    // Should show TagInput component
+    expect(
+      screen.getByPlaceholderText("Search or create tags...")
+    ).toBeInTheDocument();
   });
 });

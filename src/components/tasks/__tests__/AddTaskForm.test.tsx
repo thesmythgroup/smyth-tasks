@@ -10,10 +10,15 @@ const mockUser = {
   updatedAt: new Date().toISOString(),
 };
 
-// Mock the mutation
+// Mock the mutation and queries
 const mockAddTask = jest.fn();
 
 jest.mock("@/lib/services/localApi", () => ({
+  useGetTagsQuery: () => ({
+    data: [],
+    isLoading: false,
+    refetch: jest.fn(),
+  }),
   useAddTaskMutation: () => [mockAddTask, { isLoading: false }],
 }));
 
@@ -62,6 +67,7 @@ describe("AddTaskForm", () => {
       title: "New Test Task",
       completed: false,
       userId: mockUser.id,
+      tagIds: [],
     });
   });
 

@@ -23,6 +23,7 @@ describe("localStorage utils", () => {
     const mockState = {
       user: { currentUser: null, isAuthenticated: false },
       tasks: { items: [], loading: false, error: null },
+      tags: { items: [], loading: false, error: null },
     };
 
     saveState(mockState);
@@ -59,6 +60,7 @@ describe("localStorage utils", () => {
     expect(state).toEqual({
       user: { currentUser: null, isAuthenticated: false },
       tasks: { items: [], loading: false, error: null },
+      tags: { items: [], loading: false, error: null },
     });
   });
 });
