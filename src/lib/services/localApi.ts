@@ -6,6 +6,7 @@ import {
   removeTask,
   setTasks,
   toggleTask,
+  updateTaskDueDate,
 } from "../features/tasksSlice";
 import { saveState, loadState } from "../utils/localStorage";
 
@@ -54,6 +55,14 @@ export const localApi = createApi({
         await delay(100);
         if ("completed" in update) {
           dispatch(toggleTask(update.id));
+        }
+        if ("dueDate" in update) {
+          dispatch(
+            updateTaskDueDate({
+              id: update.id,
+              dueDate: update.dueDate || null,
+            })
+          );
         }
         const state = getState();
         saveState(state);

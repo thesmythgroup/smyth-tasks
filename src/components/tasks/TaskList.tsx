@@ -8,10 +8,20 @@ import { AddTaskForm } from "./AddTaskForm";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { ErrorMessage } from "../ui/ErrorMessage";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMemo } from "react";
 
 export function TaskList() {
   const { data: tasks = [], isLoading, error } = useGetTasksQuery();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
+
+  const sortedTasks = useMemo(() => {
+    return [...tasks].sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
+  }, [tasks]);
 
   if (!isAuthenticated) {
     return (
@@ -46,7 +56,7 @@ export function TaskList() {
       <AddTaskForm />
       <div className="space-y-4">
         <AnimatePresence>
-          {tasks.length === 0 ? (
+          {sortedTasks.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -59,7 +69,7 @@ export function TaskList() {
               </p>
             </motion.div>
           ) : (
-            tasks.map((task) => (
+            sortedTasks.map((task) => (
               <motion.div
                 key={task.id}
                 initial={{ opacity: 0, y: 20 }}

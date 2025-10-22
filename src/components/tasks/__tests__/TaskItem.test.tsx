@@ -7,6 +7,7 @@ const mockTask = {
   title: "Test Task",
   completed: false,
   userId: "user1",
+  dueDate: "2025-10-25",
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -55,5 +56,46 @@ describe("TaskItem", () => {
     fireEvent.click(deleteButton);
 
     expect(mockDeleteTask).toHaveBeenCalledWith(mockTask.id);
+  });
+
+  it("displays due date when present", () => {
+    render(<TaskItem task={mockTask} />);
+    expect(screen.getByText(/10\/2[45]\/2025/)).toBeInTheDocument();
+  });
+
+  it("shows 'Add due date' button when no due date", () => {
+    const taskNoDueDate = { ...mockTask, dueDate: null };
+    render(<TaskItem task={taskNoDueDate} />);
+    expect(screen.getByText("Add due date")).toBeInTheDocument();
+  });
+
+  it("allows editing due date", () => {
+    render(<TaskItem task={mockTask} />);
+    const editButton = screen.getByText("Edit");
+
+    fireEvent.click(editButton);
+
+    const dateInput = screen.getByDisplayValue("2025-10-25");
+    expect(dateInput).toBeInTheDocument();
+    expect(screen.getByText("Save")).toBeInTheDocument();
+    expect(screen.getByText("Cancel")).toBeInTheDocument();
+  });
+
+  it("calls updateTask with new due date", () => {
+    render(<TaskItem task={mockTask} />);
+    const editButton = screen.getByText("Edit");
+
+    fireEvent.click(editButton);
+
+    const dateInput = screen.getByDisplayValue("2025-10-25");
+    fireEvent.change(dateInput, { target: { value: "2025-11-01" } });
+
+    const saveButton = screen.getByText("Save");
+    fireEvent.click(saveButton);
+
+    expect(mockUpdateTask).toHaveBeenCalledWith({
+      id: mockTask.id,
+      dueDate: "2025-11-01",
+    });
   });
 });

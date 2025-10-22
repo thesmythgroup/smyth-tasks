@@ -24,6 +24,16 @@ export const tasksSlice = createSlice({
     removeTask: (state, action: PayloadAction<string>) => {
       state.items = state.items.filter((task) => task.id !== action.payload);
     },
+    updateTaskDueDate: (
+      state,
+      action: PayloadAction<{ id: string; dueDate: string | null }>
+    ) => {
+      const task = state.items.find((t) => t.id === action.payload.id);
+      if (task) {
+        task.dueDate = action.payload.dueDate;
+        task.updatedAt = new Date().toISOString();
+      }
+    },
     setTasks: (state, action: PayloadAction<Task[]>) => {
       state.items = action.payload;
     },
@@ -45,6 +55,7 @@ export const {
   addTask,
   toggleTask,
   removeTask,
+  updateTaskDueDate,
   setTasks,
   setLoading,
   setError,
