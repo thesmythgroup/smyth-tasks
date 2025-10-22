@@ -48,38 +48,48 @@ export function TaskItem({ task }: TaskItemProps) {
   };
 
   return (
-    <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700 hover:bg-gray-700 transition-colors">
-      <div className="flex items-center space-x-3">
-        <div className="relative">
-          {isUpdating ? (
-            <LoadingSpinner />
-          ) : (
-            <input
-              type="checkbox"
-              checked={task.completed}
-              onChange={handleToggle}
-              className="h-4 w-4 text-blue-500 rounded bg-gray-700 border-gray-600 focus:ring-blue-500 focus:ring-offset-gray-800"
-              disabled={isUpdating || isDeleting}
-            />
-          )}
+    <div className="group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4 flex-1">
+          <div className="relative">
+            {isUpdating ? (
+              <div className="h-6 w-6 flex items-center justify-center">
+                <LoadingSpinner />
+              </div>
+            ) : (
+              <input
+                type="checkbox"
+                checked={task.completed}
+                onChange={handleToggle}
+                className="h-6 w-6 text-blue-500 rounded-md bg-gray-700 border-2 border-gray-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors hover:border-gray-500 cursor-pointer"
+                disabled={isUpdating || isDeleting}
+              />
+            )}
+          </div>
+          <span
+            className={`text-lg text-gray-100 transition-all duration-200 ${
+              task.completed
+                ? "line-through text-gray-500"
+                : "group-hover:text-gray-50"
+            }`}
+          >
+            {task.title}
+          </span>
         </div>
-        <span
-          className={`text-gray-100 transition-all ${
-            task.completed ? "line-through text-gray-400" : ""
+        <button
+          onClick={handleDelete}
+          disabled={isDeleting || isUpdating}
+          className={`ml-4 px-4 py-2 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 ${
+            isDeleting ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
-          {task.title}
-        </span>
+          {isDeleting ? (
+            <LoadingSpinner />
+          ) : (
+            <span className="font-medium">Delete</span>
+          )}
+        </button>
       </div>
-      <button
-        onClick={handleDelete}
-        disabled={isDeleting || isUpdating}
-        className={`text-red-400 hover:text-red-300 transition-colors ${
-          isDeleting ? "opacity-50 cursor-not-allowed" : ""
-        }`}
-      >
-        {isDeleting ? <LoadingSpinner /> : "Delete"}
-      </button>
     </div>
   );
 }

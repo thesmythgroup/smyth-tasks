@@ -15,18 +15,24 @@ export function TaskList() {
 
   if (!isAuthenticated) {
     return (
-      <div className="text-center py-10">
-        <h2 className="text-2xl font-semibold text-gray-300">
-          Please login to manage your tasks
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <h2 className="text-3xl font-bold text-gray-300 mb-4">
+          Welcome to Task Tracker
         </h2>
+        <p className="text-xl text-gray-400 text-center max-w-md">
+          Please login to start managing your tasks and stay organized
+        </p>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-10">
-        <LoadingSpinner />
+      <div className="flex justify-center items-center min-h-[300px]">
+        <div className="text-center">
+          <LoadingSpinner />
+          <p className="mt-4 text-gray-400">Loading your tasks...</p>
+        </div>
       </div>
     );
   }
@@ -36,19 +42,22 @@ export function TaskList() {
   }
 
   return (
-    <div>
+    <div className="max-w-3xl mx-auto">
       <AddTaskForm />
       <div className="space-y-4">
         <AnimatePresence>
           {tasks.length === 0 ? (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="text-center text-gray-400"
+              className="text-center py-12 px-4 bg-gray-800/50 rounded-lg border-2 border-dashed border-gray-700"
             >
-              No tasks yet. Add one above!
-            </motion.p>
+              <p className="text-xl text-gray-400 mb-2">No tasks yet</p>
+              <p className="text-gray-500">
+                Add your first task using the form above!
+              </p>
+            </motion.div>
           ) : (
             tasks.map((task) => (
               <motion.div

@@ -33,21 +33,21 @@ export function AddTaskForm() {
   if (!currentUser) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="mb-6">
-      <div className="flex gap-4">
+    <form onSubmit={handleSubmit} className="mb-8">
+      <div className="flex gap-4 shadow-lg rounded-lg bg-gray-800 p-4 border border-gray-700">
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Add a new task..."
-          className="flex-1 rounded-md bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 transition-colors"
+          className="flex-1 rounded-lg bg-gray-700 border-2 border-gray-600 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 py-3 px-4 text-base transition-all duration-200 hover:border-gray-500"
           disabled={isLoading}
           required
         />
         <button
           type="submit"
           disabled={isLoading}
-          className={`px-4 py-2 bg-blue-500 text-gray-100 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-colors ${
+          className={`px-6 py-3 bg-blue-600 text-gray-100 font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md ${
             isLoading ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
