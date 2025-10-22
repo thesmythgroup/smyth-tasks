@@ -45,10 +45,11 @@ describe("AddTaskForm", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("calls addTask with correct data on submit", () => {
+  it("calls addTask with correct data on submit (first task)", () => {
     render(<AddTaskForm />, {
       preloadedState: {
         user: { currentUser: mockUser, isAuthenticated: true },
+        tasks: { items: [], loading: false, error: null },
       },
     });
 
@@ -62,6 +63,52 @@ describe("AddTaskForm", () => {
       title: "New Test Task",
       completed: false,
       userId: mockUser.id,
+      order: 0,
+    });
+  });
+
+  it("calls addTask with correct order when tasks exist", () => {
+    render(<AddTaskForm />, {
+      preloadedState: {
+        user: { currentUser: mockUser, isAuthenticated: true },
+        tasks: {
+          items: [
+            {
+              id: "1",
+              title: "Existing Task 1",
+              completed: false,
+              userId: mockUser.id,
+              order: 0,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            {
+              id: "2",
+              title: "Existing Task 2",
+              completed: false,
+              userId: mockUser.id,
+              order: 1,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ],
+          loading: false,
+          error: null,
+        },
+      },
+    });
+
+    const input = screen.getByPlaceholderText("Add a new task...");
+    const submitButton = screen.getByText("Add Task");
+
+    fireEvent.change(input, { target: { value: "New Test Task" } });
+    fireEvent.click(submitButton);
+
+    expect(mockAddTask).toHaveBeenCalledWith({
+      title: "New Test Task",
+      completed: false,
+      userId: mockUser.id,
+      order: 2,
     });
   });
 
@@ -69,6 +116,7 @@ describe("AddTaskForm", () => {
     render(<AddTaskForm />, {
       preloadedState: {
         user: { currentUser: mockUser, isAuthenticated: true },
+        tasks: { items: [], loading: false, error: null },
       },
     });
 

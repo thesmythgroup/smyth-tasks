@@ -61,4 +61,68 @@ describe("localStorage utils", () => {
       tasks: { items: [], loading: false, error: null },
     });
   });
+
+  it("should migrate tasks without order field", () => {
+    const stateWithoutOrder = {
+      user: { currentUser: null, isAuthenticated: false },
+      tasks: {
+        items: [
+          {
+            id: "1",
+            title: "Task 1",
+            completed: false,
+            userId: "user1",
+            createdAt: "2024-01-01",
+            updatedAt: "2024-01-01",
+          },
+          {
+            id: "2",
+            title: "Task 2",
+            completed: false,
+            userId: "user1",
+            createdAt: "2024-01-02",
+            updatedAt: "2024-01-02",
+          },
+        ],
+        loading: false,
+        error: null,
+      },
+    };
+
+    localStorage.getItem.mockReturnValueOnce(
+      JSON.stringify(stateWithoutOrder)
+    );
+
+    const state = loadState();
+    
+    expect(state?.tasks.items[0].order).toBe(0);
+    expect(state?.tasks.items[1].order).toBe(1);
+  });
+
+  it("should preserve existing order field", () => {
+    const stateWithOrder = {
+      user: { currentUser: null, isAuthenticated: false },
+      tasks: {
+        items: [
+          {
+            id: "1",
+            title: "Task 1",
+            completed: false,
+            userId: "user1",
+            order: 5,
+            createdAt: "2024-01-01",
+            updatedAt: "2024-01-01",
+          },
+        ],
+        loading: false,
+        error: null,
+      },
+    };
+
+    localStorage.getItem.mockReturnValueOnce(JSON.stringify(stateWithOrder));
+
+    const state = loadState();
+    
+    expect(state?.tasks.items[0].order).toBe(5);
+  });
 });

@@ -4,6 +4,7 @@ import tasksReducer, {
   removeTask,
   setTasks,
   clearTasks,
+  reorderTasks,
 } from "../tasksSlice";
 import { Task } from "@/lib/types";
 
@@ -12,6 +13,7 @@ const mockTask: Task = {
   title: "Test Task",
   completed: false,
   userId: "user1",
+  order: 0,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -66,5 +68,32 @@ describe("tasksSlice", () => {
     };
     const actual = tasksReducer(state, clearTasks());
     expect(actual).toEqual(initialState);
+  });
+
+  it("should handle reorderTasks", () => {
+    const task1: Task = { ...mockTask, id: "1", title: "Task 1", order: 0 };
+    const task2: Task = { ...mockTask, id: "2", title: "Task 2", order: 1 };
+    const task3: Task = { ...mockTask, id: "3", title: "Task 3", order: 2 };
+
+    const state = {
+      ...initialState,
+      items: [task1, task2, task3],
+    };
+
+    // Reorder: move task3 to first position
+    const reorderedTasks = [
+      { ...task3, order: 0 },
+      { ...task1, order: 1 },
+      { ...task2, order: 2 },
+    ];
+
+    const actual = tasksReducer(state, reorderTasks(reorderedTasks));
+    expect(actual.items).toHaveLength(3);
+    expect(actual.items[0].id).toBe("3");
+    expect(actual.items[1].id).toBe("1");
+    expect(actual.items[2].id).toBe("2");
+    expect(actual.items[0].order).toBe(0);
+    expect(actual.items[1].order).toBe(1);
+    expect(actual.items[2].order).toBe(2);
   });
 });

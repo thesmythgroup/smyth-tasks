@@ -7,6 +7,7 @@ const mockTask = {
   title: "Test Task",
   completed: false,
   userId: "user1",
+  order: 0,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };

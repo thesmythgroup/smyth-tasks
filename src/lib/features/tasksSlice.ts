@@ -38,6 +38,9 @@ export const tasksSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
+    reorderTasks: (state, action: PayloadAction<Task[]>) => {
+      state.items = action.payload;
+    },
   },
 });
 
@@ -49,5 +52,6 @@ export const {
   setLoading,
   setError,
   clearTasks,
+  reorderTasks,
 } = tasksSlice.actions;
 export default tasksSlice.reducer;

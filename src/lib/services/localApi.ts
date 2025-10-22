@@ -6,6 +6,7 @@ import {
   removeTask,
   setTasks,
   toggleTask,
+  reorderTasks,
 } from "../features/tasksSlice";
 import { saveState, loadState } from "../utils/localStorage";
 
@@ -77,6 +78,26 @@ export const localApi = createApi({
       invalidatesTags: ["Task"],
     }),
 
+    reorderTasks: builder.mutation<Task[], Task[]>({
+      queryFn: async (tasks, { dispatch, getState }) => {
+        await delay(50); // Shorter delay for snappy UX
+        
+        // Update order property for each task
+        const reorderedTasks = tasks.map((task, index) => ({
+          ...task,
+          order: index,
+          updatedAt: new Date().toISOString(),
+        }));
+        
+        dispatch(reorderTasks(reorderedTasks));
+        const state = getState();
+        saveState(state);
+        
+        return { data: reorderedTasks };
+      },
+      invalidatesTags: ["Task"],
+    }),
+
     // User endpoints
     getUser: builder.query<User | null, void>({
       queryFn: async () => {
@@ -106,6 +127,7 @@ export const {
   useAddTaskMutation,
   useUpdateTaskMutation,
   useDeleteTaskMutation,
+  useReorderTasksMutation,
   useGetUserQuery,
   useUpdateUserMutation,
 } = localApi;

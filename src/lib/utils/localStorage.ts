@@ -12,6 +12,14 @@ export const loadState = () => {
     }
     const state = JSON.parse(serializedState);
 
+    // Migrate tasks: add order field if missing
+    if (state.tasks?.items) {
+      state.tasks.items = state.tasks.items.map((task: any, index: number) => ({
+        ...task,
+        order: task.order !== undefined ? task.order : index,
+      }));
+    }
+
     // Ensure we have valid state structure
     return {
       user: state.user || { currentUser: null, isAuthenticated: false },

@@ -11,16 +11,24 @@ export function AddTaskForm() {
   const [title, setTitle] = useState("");
   const [addTask, { isLoading }] = useAddTaskMutation();
   const { currentUser } = useSelector((state: RootState) => state.user);
+  const tasks = useSelector((state: RootState) => state.tasks.items);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !currentUser) return;
+
+    // Calculate the next order: max existing order + 1, or 0 if no tasks
+    const maxOrder = tasks.length > 0 
+      ? Math.max(...tasks.map(t => t.order))
+      : -1;
+    const nextOrder = maxOrder + 1;
 
     try {
       await addTask({
         title: title.trim(),
         completed: false,
         userId: currentUser.id,
+        order: nextOrder,
       }).unwrap();
 
       setTitle("");
