@@ -10,7 +10,13 @@ export const loadState = () => {
     if (!serializedState) {
       return undefined;
     }
-    return JSON.parse(serializedState);
+    const state = JSON.parse(serializedState);
+
+    // Ensure we have valid state structure
+    return {
+      user: state.user || { currentUser: null, isAuthenticated: false },
+      tasks: state.tasks || { items: [], loading: false, error: null },
+    };
   } catch (err) {
     console.error("Error loading state:", err);
     return undefined;
@@ -23,9 +29,30 @@ export const saveState = (state: any) => {
   }
 
   try {
-    const serializedState = JSON.stringify(state);
+    // Only persist user and tasks data
+    const stateToPersist = {
+      user: state.user,
+      tasks: {
+        items: state.tasks.items,
+        loading: false,
+        error: null,
+      },
+    };
+    const serializedState = JSON.stringify(stateToPersist);
     localStorage.setItem(STORAGE_KEY, serializedState);
   } catch (err) {
     console.error("Error saving state:", err);
+  }
+};
+
+export const clearState = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (err) {
+    console.error("Error clearing state:", err);
   }
 };

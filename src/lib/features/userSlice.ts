@@ -1,5 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { User, UserState } from "../types";
+import { clearState } from "../utils/localStorage";
+import { clearTasks } from "./tasksSlice";
+import { AppDispatch } from "../store/store";
 
 const initialState: UserState = {
   currentUser: null,
@@ -14,7 +17,7 @@ export const userSlice = createSlice({
       state.currentUser = action.payload;
       state.isAuthenticated = true;
     },
-    logout: (state) => {
+    logoutSuccess: (state) => {
       state.currentUser = null;
       state.isAuthenticated = false;
     },
@@ -30,5 +33,12 @@ export const userSlice = createSlice({
   },
 });
 
-export const { login, logout, updateProfile } = userSlice.actions;
+// Async action to handle logout with cleanup
+export const logout = () => async (dispatch: AppDispatch) => {
+  clearState(); // Clear localStorage
+  dispatch(clearTasks()); // Clear tasks from Redux
+  dispatch(logoutSuccess()); // Clear user state
+};
+
+export const { login, logoutSuccess, updateProfile } = userSlice.actions;
 export default userSlice.reducer;

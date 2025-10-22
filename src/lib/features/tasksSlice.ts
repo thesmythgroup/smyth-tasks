@@ -33,6 +33,11 @@ export const tasksSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+    clearTasks: (state) => {
+      state.items = [];
+      state.loading = false;
+      state.error = null;
+    },
   },
 });
 
@@ -43,5 +48,6 @@ export const {
   setTasks,
   setLoading,
   setError,
+  clearTasks,
 } = tasksSlice.actions;
 export default tasksSlice.reducer;
