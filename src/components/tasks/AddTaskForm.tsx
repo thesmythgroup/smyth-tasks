@@ -51,7 +51,7 @@ export function AddTaskForm() {
             isLoading ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >
-          {isLoading ? <LoadingSpinner size="sm" /> : "Add Task"}
+          {isLoading ? <LoadingSpinner /> : "Add Task"}
         </button>
       </div>
     </form>

@@ -52,7 +52,7 @@ export function TaskItem({ task }: TaskItemProps) {
       <div className="flex items-center space-x-3">
         <div className="relative">
           {isUpdating ? (
-            <LoadingSpinner size="sm" />
+            <LoadingSpinner />
           ) : (
             <input
               type="checkbox"
@@ -78,7 +78,7 @@ export function TaskItem({ task }: TaskItemProps) {
           isDeleting ? "opacity-50 cursor-not-allowed" : ""
         }`}
       >
-        {isDeleting ? <LoadingSpinner size="sm" /> : "Delete"}
+        {isDeleting ? <LoadingSpinner /> : "Delete"}
       </button>
     </div>
   );

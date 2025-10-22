@@ -26,7 +26,7 @@ export function TaskList() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-10">
-        <LoadingSpinner size="lg" />
+        <LoadingSpinner />
       </div>
     );
   }

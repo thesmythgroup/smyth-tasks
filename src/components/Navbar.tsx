@@ -1,18 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/types";
 import { logout } from "@/lib/features/userSlice";
 import { LoginModal } from "./auth/LoginModal";
 import { AppDispatch } from "@/lib/store/store";
+import { loadState } from "@/lib/utils/localStorage";
 
 export function Navbar() {
   const dispatch = useDispatch<AppDispatch>();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
   const { currentUser, isAuthenticated } = useSelector(
     (state: RootState) => state.user
   );
+
+  useEffect(() => {
+    const savedState = loadState();
+    if (savedState?.user) {
+      dispatch({ type: "user/login", payload: savedState.user.currentUser });
+    }
+    setIsHydrated(true);
+  }, [dispatch]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -28,7 +38,9 @@ export function Navbar() {
             </div>
             <div className="flex items-center">
               <div className="flex items-center space-x-4">
-                {isAuthenticated && currentUser ? (
+                {!isHydrated ? (
+                  <div className="w-20 h-8" /> // Placeholder with same dimensions as buttons
+                ) : isAuthenticated && currentUser ? (
                   <>
                     <span className="text-gray-300">{currentUser.name}</span>
                     <button
