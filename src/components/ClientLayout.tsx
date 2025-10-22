@@ -1,24 +1,25 @@
 "use client";
 
-import { ReduxProvider } from "@/lib/providers/ReduxProvider";
-import { Layout } from "./Layout";
-import { Toaster } from "react-hot-toast";
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { loadState } from "@/lib/utils/localStorage";
+import { login } from "@/lib/features/userSlice";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <ReduxProvider>
-      <Layout>{children}</Layout>
-      <Toaster
-        position="bottom-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: "#1F2937", // gray-800
-            color: "#F3F4F6", // gray-100
-            border: "1px solid #374151", // gray-700
-          },
-        }}
-      />
-    </ReduxProvider>
-  );
+  const dispatch = useDispatch();
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    const savedState = loadState();
+    if (savedState?.user?.currentUser) {
+      dispatch(login(savedState.user.currentUser));
+    }
+    setIsHydrated(true);
+  }, [dispatch]);
+
+  if (!isHydrated) {
+    return null; // Return nothing during SSR and initial hydration
+  }
+
+  return <>{children}</>;
 }
