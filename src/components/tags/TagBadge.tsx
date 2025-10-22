@@ -16,25 +16,25 @@ export function TagBadge({
   className = "",
 }: TagBadgeProps) {
   const sizeClasses = {
-    sm: "px-2 py-1 text-xs",
+    sm: "px-2.5 py-1 text-xs",
     md: "px-3 py-1.5 text-sm",
   };
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-medium transition-all ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-md font-medium transition-all shadow-sm ${sizeClasses[size]} ${className}`}
       style={{
-        backgroundColor: `${tag.color}20`,
+        backgroundColor: `${tag.color}15`,
         color: tag.color,
-        borderColor: tag.color,
+        borderColor: `${tag.color}40`,
         borderWidth: "1px",
       }}
     >
-      <span>{tag.name}</span>
+      <span className="font-semibold">{tag.name}</span>
       {onRemove && (
         <button
           onClick={onRemove}
-          className="hover:opacity-70 transition-opacity focus:outline-none focus:ring-1 focus:ring-offset-1 rounded-full"
+          className="hover:bg-black/10 rounded-sm p-0.5 transition-all focus:outline-none focus:ring-1 focus:ring-offset-1"
           style={{ color: tag.color }}
           aria-label={`Remove ${tag.name} tag`}
         >
@@ -43,7 +43,7 @@ export function TagBadge({
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
-            strokeWidth={3}
+            strokeWidth={2.5}
           >
             <path
               strokeLinecap="round"

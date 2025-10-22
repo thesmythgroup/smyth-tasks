@@ -27,8 +27,7 @@ export function TagForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!name.trim()) {
       setError("Tag name is required");
       return;
@@ -38,19 +37,26 @@ export function TagForm({
       setIsSubmitting(true);
       setError("");
       await onSubmit({ name: name.trim(), color });
-    } catch (err) {
+    } catch {
       setError("Failed to save tag");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-3.5">
       <div>
         <label
           htmlFor="tag-name"
-          className="block text-sm font-medium text-gray-300 mb-2"
+          className="block text-xs font-medium text-gray-400 mb-1.5 uppercase tracking-wide"
         >
           Tag Name
         </label>
@@ -59,8 +65,9 @@ export function TagForm({
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Enter tag name..."
-          className="w-full rounded-lg bg-gray-700 border-2 border-gray-600 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 py-2 px-3 text-sm transition-all duration-200"
+          onKeyDown={handleKeyDown}
+          placeholder="e.g., Urgent, Personal..."
+          className="w-full rounded-lg bg-gray-700/50 border border-gray-600/50 text-gray-100 placeholder-gray-500 focus:border-blue-500/50 focus:bg-gray-700 focus:ring-2 focus:ring-blue-500/20 py-2 px-3 text-sm transition-all duration-200"
           disabled={isSubmitting}
           autoFocus
           required
@@ -68,8 +75,8 @@ export function TagForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-300 mb-2">
-          Color
+        <label className="block text-xs font-medium text-gray-400 mb-2 uppercase tracking-wide">
+          Choose Color
         </label>
         <div className="grid grid-cols-4 gap-2">
           {COLOR_OPTIONS.map((option) => (
@@ -77,21 +84,21 @@ export function TagForm({
               key={option.value}
               type="button"
               onClick={() => setColor(option.value)}
-              className={`relative p-3 rounded-lg transition-all ${
+              className={`relative p-2.5 rounded-lg transition-all border-2 ${
                 color === option.value
-                  ? "ring-2 ring-offset-2 ring-offset-gray-800 scale-105"
-                  : "hover:scale-105"
+                  ? "ring-2 ring-offset-2 ring-offset-gray-800 scale-105 border-white/30"
+                  : "border-transparent hover:scale-105 hover:border-white/20"
               }`}
               style={{
                 backgroundColor: option.value,
-                borderColor: option.value,
               }}
               disabled={isSubmitting}
               aria-label={`Select ${option.name.toLowerCase()} color`}
+              title={option.name}
             >
               {color === option.value && (
                 <svg
-                  className="h-5 w-5 text-white mx-auto"
+                  className="h-4 w-4 text-white mx-auto drop-shadow-lg"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -106,20 +113,29 @@ export function TagForm({
             </button>
           ))}
         </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Selected:{" "}
+          <span className="font-medium text-gray-400">
+            {COLOR_OPTIONS.find((c) => c.value === color)?.name}
+          </span>
+        </p>
       </div>
 
       {error && (
-        <div className="text-sm text-red-400 bg-red-900/20 border border-red-800 rounded px-3 py-2">
+        <div className="text-xs text-red-400 bg-red-900/20 border border-red-800/50 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
 
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-2 pt-1">
         <button
-          type="submit"
-          disabled={isSubmitting}
-          className={`flex-1 px-4 py-2 bg-blue-600 text-gray-100 font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 ${
-            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+          type="button"
+          onClick={handleSubmit}
+          disabled={isSubmitting || !name.trim()}
+          className={`flex-1 px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200 shadow-sm ${
+            isSubmitting || !name.trim()
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:shadow-md"
           }`}
         >
           {isSubmitting ? <LoadingSpinner /> : submitLabel}
@@ -128,11 +144,11 @@ export function TagForm({
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="flex-1 px-4 py-2 bg-gray-700 text-gray-300 font-semibold rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200"
+          className="flex-1 px-4 py-2.5 bg-gray-700/50 text-gray-300 font-semibold rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500/50 transition-all duration-200"
         >
           Cancel
         </button>
       </div>
-    </form>
+    </div>
   );
 }

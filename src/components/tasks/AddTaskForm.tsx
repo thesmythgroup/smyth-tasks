@@ -21,6 +21,7 @@ export function AddTaskForm() {
         title: title.trim(),
         completed: false,
         userId: currentUser.id,
+        tagIds: [],
       }).unwrap();
 
       setTitle("");
