@@ -1,13 +1,21 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { User, UserState } from "../types";
 import { clearState } from "../utils/localStorage";
 import { clearTasks } from "./tasksSlice";
-import { AppDispatch } from "../store/store";
 
 const initialState: UserState = {
   currentUser: null,
   isAuthenticated: false,
 };
+
+export const logout = createAsyncThunk(
+  "user/logout",
+  async (_, { dispatch }) => {
+    clearState();
+    dispatch(clearTasks());
+    dispatch(logoutSuccess());
+  }
+);
 
 export const userSlice = createSlice({
   name: "user",
@@ -32,13 +40,6 @@ export const userSlice = createSlice({
     },
   },
 });
-
-// Async action to handle logout with cleanup
-export const logout = () => async (dispatch: AppDispatch) => {
-  clearState(); // Clear localStorage
-  dispatch(clearTasks()); // Clear tasks from Redux
-  dispatch(logoutSuccess()); // Clear user state
-};
 
 export const { login, logoutSuccess, updateProfile } = userSlice.actions;
 export default userSlice.reducer;

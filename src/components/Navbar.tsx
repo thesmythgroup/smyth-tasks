@@ -1,11 +1,14 @@
+"use client";
+
 import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/types";
 import { logout } from "@/lib/features/userSlice";
 import { LoginModal } from "./auth/LoginModal";
+import { AppDispatch } from "@/lib/store/store";
 
 export function Navbar() {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const { currentUser, isAuthenticated } = useSelector(
     (state: RootState) => state.user

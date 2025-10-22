@@ -1,3 +1,5 @@
+"use client";
+
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/types";
 import { useGetTasksQuery } from "@/lib/services/localApi";

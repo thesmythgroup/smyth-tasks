@@ -1,6 +1,6 @@
 import React, { PropsWithChildren, ReactElement } from "react";
 import { render as rtlRender, RenderOptions } from "@testing-library/react";
-import { configureStore, Store } from "@reduxjs/toolkit";
+import { configureStore, Store, combineReducers } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
 import userReducer from "../features/userSlice";
 import tasksReducer from "../features/tasksSlice";
@@ -8,13 +8,15 @@ import type { RootState } from "../types";
 
 type PartialRootState = Partial<RootState>;
 
+const rootReducer = combineReducers({
+  user: userReducer,
+  tasks: tasksReducer,
+  localApi: (state = {}) => state,
+});
+
 const createTestStore = (preloadedState: PartialRootState = {}) => {
   return configureStore({
-    reducer: {
-      user: userReducer,
-      tasks: tasksReducer,
-      localApi: (state = {}) => state,
-    },
+    reducer: rootReducer,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         serializableCheck: false,
