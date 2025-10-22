@@ -3,9 +3,12 @@ import { RootState } from "@/lib/types";
 import { useGetTasksQuery } from "@/lib/services/localApi";
 import { TaskItem } from "./TaskItem";
 import { AddTaskForm } from "./AddTaskForm";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { ErrorMessage } from "../ui/ErrorMessage";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function TaskList() {
-  const { data: tasks = [], isLoading } = useGetTasksQuery();
+  const { data: tasks = [], isLoading, error } = useGetTasksQuery();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
 
   if (!isAuthenticated) {
@@ -20,23 +23,44 @@ export function TaskList() {
 
   if (isLoading) {
     return (
-      <div className="text-center py-10">
-        <p className="text-gray-500">Loading tasks...</p>
+      <div className="flex justify-center items-center py-10">
+        <LoadingSpinner size="lg" />
       </div>
     );
+  }
+
+  if (error) {
+    return <ErrorMessage message="Failed to load tasks. Please try again." />;
   }
 
   return (
     <div>
       <AddTaskForm />
       <div className="space-y-4">
-        {tasks.length === 0 ? (
-          <p className="text-center text-gray-500">
-            No tasks yet. Add one above!
-          </p>
-        ) : (
-          tasks.map((task) => <TaskItem key={task.id} task={task} />)
-        )}
+        <AnimatePresence>
+          {tasks.length === 0 ? (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center text-gray-500"
+            >
+              No tasks yet. Add one above!
+            </motion.p>
+          ) : (
+            tasks.map((task) => (
+              <motion.div
+                key={task.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <TaskItem task={task} />
+              </motion.div>
+            ))
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
