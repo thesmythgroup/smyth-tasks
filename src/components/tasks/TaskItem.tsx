@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Task } from "@/lib/types";
+import { Task, PriorityLevel } from "@/lib/types";
 import {
   useUpdateTaskMutation,
   useDeleteTaskMutation,
 } from "@/lib/services/localApi";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { PRIORITY_LEVELS, getPriorityStyles } from "@/lib/utils/priorityUtils";
 import toast from "react-hot-toast";
 
 interface TaskItemProps {
@@ -47,8 +48,24 @@ export function TaskItem({ task }: TaskItemProps) {
     }
   };
 
+  const handlePriorityChange = async (newPriority: PriorityLevel) => {
+    try {
+      setIsUpdating(true);
+      await updateTask({
+        id: task.id,
+        priority: newPriority,
+      }).unwrap();
+      toast.success("Priority updated successfully");
+    } catch (error) {
+      toast.error("Failed to update priority");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+
   return (
-    <div className="group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5">
+    <div className={`group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${getPriorityStyles(task.priority)}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4 flex-1">
           <div className="relative">
@@ -66,15 +83,31 @@ export function TaskItem({ task }: TaskItemProps) {
               />
             )}
           </div>
-          <span
-            className={`text-lg text-gray-100 transition-all duration-200 ${
-              task.completed
-                ? "line-through text-gray-500"
-                : "group-hover:text-gray-50"
-            }`}
-          >
-            {task.title}
-          </span>
+          <div className="flex-1">
+            <span
+              className={`text-lg text-gray-100 transition-all duration-200 ${
+                task.completed
+                  ? "line-through text-gray-500"
+                  : "group-hover:text-gray-50"
+              }`}
+            >
+              {task.title}
+            </span>
+            <div className="mt-1">
+              <select
+                value={task.priority}
+                onChange={(e) => handlePriorityChange(Number(e.target.value) as PriorityLevel)}
+                className="text-sm bg-gray-700 border border-gray-600 text-gray-300 rounded px-2 py-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                disabled={isUpdating || isDeleting}
+              >
+                {Object.values(PRIORITY_LEVELS).map((level) => (
+                  <option key={level.id} value={level.id}>
+                    {level.displayText}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
         <button
           onClick={handleDelete}

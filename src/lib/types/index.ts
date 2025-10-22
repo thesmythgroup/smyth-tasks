@@ -6,10 +6,13 @@ export interface User {
   updatedAt: string;
 }
 
+export type PriorityLevel = 0 | 1 | 2; // 0: Ghost Pepper, 1: Jalapeño, 2: Minnesotan
+
 export interface Task {
   id: string;
   title: string;
   completed: boolean;
+  priority: PriorityLevel;
   userId: string;
   createdAt: string;
   updatedAt: string;
