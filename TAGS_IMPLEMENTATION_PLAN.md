@@ -39,12 +39,12 @@
   - Export actions and reducer
   - Follow same pattern as `tasksSlice.ts`
 
-- [ ] **1.3** Update tasks Redux slice `src/lib/features/tasksSlice.ts`
+- [x] **1.3** Update tasks Redux slice `src/lib/features/tasksSlice.ts` ✅
 
   - Add updateTask reducer to handle tag assignments
   - Ensure tagIds array is handled when creating/updating tasks
 
-- [ ] **1.4** Update Redux store `src/lib/store/store.ts`
+- [x] **1.4** Update Redux store `src/lib/store/store.ts` ✅
   - Add tags reducer to combineReducers
   - Update type imports
 
@@ -203,6 +203,6 @@ Predefined color palette (can be adjusted):
 
 ## Current Status
 
-**Phase:** Phase 1 - Core Data Layer (In Progress)
-**Last Updated:** Phase 1.1 Complete - Types updated
-**Next:** Phase 1.2 - Create tags Redux slice
+**Phase:** Phase 1 - Core Data Layer ✅ COMPLETE
+**Last Updated:** Phase 1 Complete - All core data layer updates done
+**Next:** Phase 2 - API Layer (localApi endpoints)

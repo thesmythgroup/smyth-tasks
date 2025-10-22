@@ -14,6 +14,16 @@ export const tasksSlice = createSlice({
     addTask: (state, action: PayloadAction<Task>) => {
       state.items.push(action.payload);
     },
+    updateTask: (state, action: PayloadAction<Partial<Task> & { id: string }>) => {
+      const index = state.items.findIndex((t) => t.id === action.payload.id);
+      if (index !== -1) {
+        state.items[index] = {
+          ...state.items[index],
+          ...action.payload,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    },
     toggleTask: (state, action: PayloadAction<string>) => {
       const task = state.items.find((t) => t.id === action.payload);
       if (task) {
@@ -43,6 +53,7 @@ export const tasksSlice = createSlice({
 
 export const {
   addTask,
+  updateTask,
   toggleTask,
   removeTask,
   setTasks,
