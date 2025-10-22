@@ -8,13 +8,15 @@ import {
 } from "@/lib/services/localApi";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { PRIORITY_LEVELS, getPriorityStyles } from "@/lib/utils/priorityUtils";
+import { highlightText } from "@/lib/utils/searchUtils";
 import toast from "react-hot-toast";
 
 interface TaskItemProps {
   task: Task;
+  searchQuery?: string;
 }
 
-export function TaskItem({ task }: TaskItemProps) {
+export function TaskItem({ task, searchQuery }: TaskItemProps) {
   const [updateTask] = useUpdateTaskMutation();
   const [deleteTask] = useDeleteTaskMutation();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -30,7 +32,7 @@ export function TaskItem({ task }: TaskItemProps) {
       toast.success(
         `Task ${task.completed ? "uncompleted" : "completed"} successfully`
       );
-    } catch (error) {
+    } catch {
       toast.error("Failed to update task");
     } finally {
       setIsUpdating(false);
@@ -42,7 +44,7 @@ export function TaskItem({ task }: TaskItemProps) {
       setIsDeleting(true);
       await deleteTask(task.id).unwrap();
       toast.success("Task deleted successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete task");
       setIsDeleting(false);
     }
@@ -56,11 +58,39 @@ export function TaskItem({ task }: TaskItemProps) {
         priority: newPriority,
       }).unwrap();
       toast.success("Priority updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update priority");
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const renderTaskTitle = () => {
+    if (searchQuery?.trim()) {
+      const highlightedTitle = highlightText(task.title, searchQuery);
+      return (
+        <span
+          className={`text-lg text-gray-100 transition-all duration-200 ${
+            task.completed
+              ? "line-through text-gray-500"
+              : "group-hover:text-gray-50"
+          }`}
+          dangerouslySetInnerHTML={{ __html: highlightedTitle }}
+        />
+      );
+    }
+    
+    return (
+      <span
+        className={`text-lg text-gray-100 transition-all duration-200 ${
+          task.completed
+            ? "line-through text-gray-500"
+            : "group-hover:text-gray-50"
+        }`}
+      >
+        {task.title}
+      </span>
+    );
   };
 
 
@@ -84,15 +114,7 @@ export function TaskItem({ task }: TaskItemProps) {
             )}
           </div>
           <div className="flex-1">
-            <span
-              className={`text-lg text-gray-100 transition-all duration-200 ${
-                task.completed
-                  ? "line-through text-gray-500"
-                  : "group-hover:text-gray-50"
-              }`}
-            >
-              {task.title}
-            </span>
+            {renderTaskTitle()}
             <div className="mt-1">
               <select
                 value={task.priority}
