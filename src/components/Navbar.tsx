@@ -25,9 +25,7 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-                Task Tracker
-              </h1>
+              <h1 className="text-2xl font-bold">Smyth Tasks</h1>
             </div>
             <div className="flex items-center">
               <div className="flex items-center space-x-6">
