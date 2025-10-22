@@ -4,6 +4,7 @@ import tasksReducer, {
   removeTask,
   setTasks,
   clearTasks,
+  updateTaskDueDate,
 } from "../tasksSlice";
 import { Task } from "@/lib/types";
 
@@ -12,6 +13,7 @@ const mockTask: Task = {
   title: "Test Task",
   completed: false,
   userId: "user1",
+  dueDate: "2025-10-25",
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -66,5 +68,51 @@ describe("tasksSlice", () => {
     };
     const actual = tasksReducer(state, clearTasks());
     expect(actual).toEqual(initialState);
+  });
+
+  it("should handle addTask with dueDate", () => {
+    const taskWithDueDate: Task = {
+      ...mockTask,
+      dueDate: "2025-12-31",
+    };
+    const actual = tasksReducer(initialState, addTask(taskWithDueDate));
+    expect(actual.items).toHaveLength(1);
+    expect(actual.items[0].dueDate).toBe("2025-12-31");
+  });
+
+  it("should handle addTask without dueDate", () => {
+    const taskWithoutDueDate: Task = {
+      ...mockTask,
+      dueDate: null,
+    };
+    const actual = tasksReducer(initialState, addTask(taskWithoutDueDate));
+    expect(actual.items).toHaveLength(1);
+    expect(actual.items[0].dueDate).toBeNull();
+  });
+
+  it("should handle updateTaskDueDate", () => {
+    const state = {
+      ...initialState,
+      items: [mockTask],
+    };
+    const newDueDate = "2025-11-01";
+    const actual = tasksReducer(
+      state,
+      updateTaskDueDate({ id: mockTask.id, dueDate: newDueDate })
+    );
+    expect(actual.items[0].dueDate).toBe(newDueDate);
+    expect(actual.items[0].updatedAt).not.toBe(mockTask.updatedAt);
+  });
+
+  it("should handle updateTaskDueDate to null", () => {
+    const state = {
+      ...initialState,
+      items: [mockTask],
+    };
+    const actual = tasksReducer(
+      state,
+      updateTaskDueDate({ id: mockTask.id, dueDate: null })
+    );
+    expect(actual.items[0].dueDate).toBeNull();
   });
 });

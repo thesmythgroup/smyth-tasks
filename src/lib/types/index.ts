@@ -14,6 +14,7 @@ export interface Task {
   completed: boolean;
   priority: PriorityLevel;
   userId: string;
+  dueDate: string | null;
   createdAt: string;
   updatedAt: string;
 }

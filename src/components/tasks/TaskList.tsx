@@ -9,32 +9,50 @@ import { AddTaskForm } from "./AddTaskForm";
 import { TaskSearch } from "./TaskSearch";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { ErrorMessage } from "../ui/ErrorMessage";
-import { PRIORITY_LEVELS, getPriorityFilterStyles, getPriorityFilterInlineStyles } from "@/lib/utils/priorityUtils";
+import {
+  PRIORITY_LEVELS,
+  getPriorityFilterStyles,
+  getPriorityFilterInlineStyles,
+} from "@/lib/utils/priorityUtils";
 import { searchTasks } from "@/lib/utils/searchUtils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useMemo } from "react";
 
 export function TaskList() {
   const { data: tasks = [], isLoading, error } = useGetTasksQuery();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
-  const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>("all");
+
+  const sortedTasks = useMemo(() => {
+    return [...tasks].sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+    });
+  }, [tasks]);
+  const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>(
+    "all"
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredAndSortedTasks = useMemo(() => {
     let filteredTasks = [...tasks];
-    
+
     if (priorityFilter !== "all") {
-      filteredTasks = tasks.filter(task => task.priority === priorityFilter);
+      filteredTasks = tasks.filter((task) => task.priority === priorityFilter);
     }
-    
+
     if (searchQuery.trim()) {
-      filteredTasks = searchTasks(filteredTasks, searchQuery, { fields: ['title'] });
+      filteredTasks = searchTasks(filteredTasks, searchQuery, {
+        fields: ["title"],
+      });
     }
-    
+
     return filteredTasks.sort((a, b) => {
       if (a.priority !== b.priority) {
         return a.priority - b.priority;
       }
-      
+
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
   }, [tasks, priorityFilter, searchQuery]);
@@ -70,20 +88,22 @@ export function TaskList() {
   return (
     <div className="max-w-3xl mx-auto">
       <AddTaskForm />
-      
+
       {tasks.length > 0 && (
         <div className="mb-6 space-y-4">
           <div className="w-full max-w-md">
-            <TaskSearch 
+            <TaskSearch
               onSearchChange={setSearchQuery}
               placeholder="Search tasks..."
             />
           </div>
-          
+
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
             <div className="flex flex-wrap gap-6">
               <div className="flex flex-col gap-2">
-                <span className="text-sm text-gray-400 font-medium">Priority:</span>
+                <span className="text-sm text-gray-400 font-medium">
+                  Priority:
+                </span>
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setPriorityFilter("all")}
@@ -93,13 +113,13 @@ export function TaskList() {
                         : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                     }`}
                     style={{
-                      paddingLeft: '1.25rem',
-                      paddingRight: '1.25rem',
-                      paddingTop: '0.75rem',
-                      paddingBottom: '0.75rem',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.875rem',
-                      fontWeight: '500'
+                      paddingLeft: "1.25rem",
+                      paddingRight: "1.25rem",
+                      paddingTop: "0.75rem",
+                      paddingBottom: "0.75rem",
+                      borderRadius: "0.5rem",
+                      fontSize: "0.875rem",
+                      fontWeight: "500",
                     }}
                   >
                     All
@@ -108,7 +128,10 @@ export function TaskList() {
                     <button
                       key={level.id}
                       onClick={() => setPriorityFilter(level.id)}
-                      className={getPriorityFilterStyles(level.id, priorityFilter === level.id)}
+                      className={getPriorityFilterStyles(
+                        level.id,
+                        priorityFilter === level.id
+                      )}
                       style={getPriorityFilterInlineStyles()}
                     >
                       {level.displayText}
@@ -116,7 +139,7 @@ export function TaskList() {
                   ))}
                 </div>
               </div>
-              
+
               <div className="flex flex-col gap-2">
                 <span className="text-sm text-gray-400 font-medium">Tags:</span>
                 <div className="flex gap-2">
@@ -124,16 +147,16 @@ export function TaskList() {
                     disabled
                     className="px-4 py-2 rounded-md text-xs font-medium bg-gray-800 text-gray-500 border border-gray-600 cursor-not-allowed opacity-60"
                     style={{
-                      paddingLeft: '1rem',
-                      paddingRight: '1rem',
-                      paddingTop: '0.5rem',
-                      paddingBottom: '0.5rem',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.75rem',
-                      fontWeight: '500',
-                      backgroundColor: '#1F2937',
-                      color: '#6B7280',
-                      borderColor: '#4B5563'
+                      paddingLeft: "1rem",
+                      paddingRight: "1rem",
+                      paddingTop: "0.5rem",
+                      paddingBottom: "0.5rem",
+                      borderRadius: "0.375rem",
+                      fontSize: "0.75rem",
+                      fontWeight: "500",
+                      backgroundColor: "#1F2937",
+                      color: "#6B7280",
+                      borderColor: "#4B5563",
                     }}
                   >
                     Work
@@ -142,16 +165,16 @@ export function TaskList() {
                     disabled
                     className="px-4 py-2 rounded-md text-xs font-medium bg-gray-800 text-gray-500 border border-gray-600 cursor-not-allowed opacity-60"
                     style={{
-                      paddingLeft: '1rem',
-                      paddingRight: '1rem',
-                      paddingTop: '0.5rem',
-                      paddingBottom: '0.5rem',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.75rem',
-                      fontWeight: '500',
-                      backgroundColor: '#1F2937',
-                      color: '#6B7280',
-                      borderColor: '#4B5563'
+                      paddingLeft: "1rem",
+                      paddingRight: "1rem",
+                      paddingTop: "0.5rem",
+                      paddingBottom: "0.5rem",
+                      borderRadius: "0.375rem",
+                      fontSize: "0.75rem",
+                      fontWeight: "500",
+                      backgroundColor: "#1F2937",
+                      color: "#6B7280",
+                      borderColor: "#4B5563",
                     }}
                   >
                     Personal
@@ -160,16 +183,16 @@ export function TaskList() {
                     disabled
                     className="px-4 py-2 rounded-md text-xs font-medium bg-gray-800 text-gray-500 border border-gray-600 cursor-not-allowed opacity-60"
                     style={{
-                      paddingLeft: '1rem',
-                      paddingRight: '1rem',
-                      paddingTop: '0.5rem',
-                      paddingBottom: '0.5rem',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.75rem',
-                      fontWeight: '500',
-                      backgroundColor: '#1F2937',
-                      color: '#6B7280',
-                      borderColor: '#4B5563'
+                      paddingLeft: "1rem",
+                      paddingRight: "1rem",
+                      paddingTop: "0.5rem",
+                      paddingBottom: "0.5rem",
+                      borderRadius: "0.375rem",
+                      fontSize: "0.75rem",
+                      fontWeight: "500",
+                      backgroundColor: "#1F2937",
+                      color: "#6B7280",
+                      borderColor: "#4B5563",
                     }}
                   >
                     Urgent
@@ -186,7 +209,7 @@ export function TaskList() {
 
       <div className="space-y-4">
         <AnimatePresence>
-          {filteredAndSortedTasks.length === 0 ? (
+          {sortedTasks.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -194,19 +217,20 @@ export function TaskList() {
               className="text-center py-12 px-4 bg-gray-800/50 rounded-lg border-2 border-dashed border-gray-700"
             >
               <p className="text-xl text-gray-400 mb-2">
-                {tasks.length === 0 ? "No tasks yet" : "No tasks match the current filter"}
+                {tasks.length === 0
+                  ? "No tasks yet"
+                  : "No tasks match the current filter"}
               </p>
               <p className="text-gray-500">
-                {tasks.length === 0 
+                {tasks.length === 0
                   ? "Add your first task using the form above!"
-                  : searchQuery.trim() 
-                    ? "Try adjusting your search or priority filter."
-                    : "Try changing the priority filter above."
-                }
+                  : searchQuery.trim()
+                  ? "Try adjusting your search or priority filter."
+                  : "Try changing the priority filter above."}
               </p>
             </motion.div>
           ) : (
-            filteredAndSortedTasks.map((task) => (
+            sortedTasks.map((task) => (
               <motion.div
                 key={task.id}
                 initial={{ opacity: 0, y: 20 }}
