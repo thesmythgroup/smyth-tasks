@@ -153,16 +153,7 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
           </div>
           <div className="flex-1">
             {renderTaskTitle()}
-            <div className="flex-1">
-              <span
-                className={`text-lg text-gray-100 transition-all duration-200 block ${
-                  task.completed
-                    ? "line-through text-gray-500"
-                    : "group-hover:text-gray-50"
-                }`}
-              >
-                {task.title}
-              </span>
+            <div>
               {task.dueDate && !isEditingDate && (
                 <div className="mt-2 text-sm">
                   <span
