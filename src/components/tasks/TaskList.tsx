@@ -65,33 +65,28 @@ export function TaskList() {
     });
   }, [tasks, priorityFilter, searchQuery]);
 
-  const effectiveSelectedTaskId = useMemo(() => {
-    if (filteredAndSortedTasks.length === 0) return null;
-    if (
-      selectedTaskId &&
-      filteredAndSortedTasks.some((t) => t.id === selectedTaskId)
-    ) {
-      return selectedTaskId;
-    }
-    return filteredAndSortedTasks[0].id;
-  }, [filteredAndSortedTasks, selectedTaskId]);
-
   const currentIndex = useMemo(
-    () =>
-      effectiveSelectedTaskId
-        ? filteredAndSortedTasks.findIndex(
-            (t) => t.id === effectiveSelectedTaskId
-          )
-        : -1,
-    [filteredAndSortedTasks, effectiveSelectedTaskId]
+    () => filteredAndSortedTasks.findIndex((t) => t.id === selectedTaskId),
+    [filteredAndSortedTasks, selectedTaskId]
   );
+
+  // Initialize or re-clamp selection when list changes
+  useEffect(() => {
+    if (filteredAndSortedTasks.length === 0) {
+      setSelectedTaskId(null);
+      return;
+    }
+    if (currentIndex === -1) {
+      setSelectedTaskId(filteredAndSortedTasks[0].id);
+    }
+  }, [filteredAndSortedTasks, currentIndex]);
 
   // Scroll selected into view
   useEffect(() => {
-    if (!effectiveSelectedTaskId) return;
-    const node = taskRefs.current[effectiveSelectedTaskId];
+    if (!selectedTaskId) return;
+    const node = taskRefs.current[selectedTaskId];
     node?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  }, [effectiveSelectedTaskId]);
+  }, [selectedTaskId]);
 
   // Global keyboard handler
   useEffect(() => {
@@ -327,9 +322,7 @@ export function TaskList() {
             filteredAndSortedTasks.map((task) => (
               <motion.div
                 key={task.id}
-                ref={(el) => {
-                  taskRefs.current[task.id] = el;
-                }}
+                ref={(el) => (taskRefs.current[task.id] = el)}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -338,7 +331,7 @@ export function TaskList() {
                 <TaskItem
                   task={task}
                   searchQuery={searchQuery}
-                  isSelected={task.id === effectiveSelectedTaskId}
+                  isSelected={task.id === selectedTaskId}
                   onClick={() => setSelectedTaskId(task.id)}
                 />
               </motion.div>

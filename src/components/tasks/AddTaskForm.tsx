@@ -1,13 +1,13 @@
 "use client";
 
-import { useImperativeHandle, useRef, useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState, PriorityLevel } from "@/lib/types";
 import { useAddTaskMutation } from "@/lib/services/localApi";
-import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { PriorityLevel, RootState } from "@/lib/types";
 import { getTodayDateString } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS } from "@/lib/utils/priorityUtils";
+import { useImperativeHandle, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
 
 export type AddTaskFormHandle = { focusTitle: () => void };
 
@@ -52,7 +52,10 @@ export function AddTaskForm(props: { ref?: React.Ref<AddTaskFormHandle> }) {
   if (!currentUser) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="mb-8">
+    <form
+      onSubmit={handleSubmit}
+      className="mb-8"
+    >
       <div className="flex flex-col gap-4 shadow-lg rounded-lg bg-gray-800 p-4 border border-gray-700">
         <div className="flex gap-4">
           <input
@@ -81,7 +84,10 @@ export function AddTaskForm(props: { ref?: React.Ref<AddTaskFormHandle> }) {
             disabled={isLoading}
           >
             {Object.values(PRIORITY_LEVELS).map((level) => (
-              <option key={level.id} value={level.id}>
+              <option
+                key={level.id}
+                value={level.id}
+              >
                 {level.displayText}
               </option>
             ))}
