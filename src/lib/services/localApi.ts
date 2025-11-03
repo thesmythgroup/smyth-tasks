@@ -27,26 +27,28 @@ export const localApi = createApi({
         const tasks = state?.tasks?.items || [];
 
         // Migrate old string-based priorities to numeric IDs
-        const migratedTasks = tasks.map((task) => {
-          if (typeof task.priority === "string") {
-            let priorityId: PriorityLevel;
-            switch (task.priority) {
-              case "ghost-pepper":
-                priorityId = 0;
-                break;
-              case "jalapeño":
-                priorityId = 1;
-                break;
-              case "minnesotan":
-                priorityId = 2;
-                break;
-              default:
-                priorityId = 1; // Default to Jalapeño
+        const migratedTasks = tasks.map(
+          (task: Task | (Omit<Task, "priority"> & { priority: string })) => {
+            if (typeof task.priority === "string") {
+              let priorityId: PriorityLevel;
+              switch (task.priority) {
+                case "ghost-pepper":
+                  priorityId = 0;
+                  break;
+                case "jalapeño":
+                  priorityId = 1;
+                  break;
+                case "minnesotan":
+                  priorityId = 2;
+                  break;
+                default:
+                  priorityId = 1; // Default to Jalapeño
+              }
+              return { ...task, priority: priorityId };
             }
-            return { ...task, priority: priorityId };
+            return task;
           }
-          return task;
-        });
+        );
 
         dispatch(setTasks(migratedTasks));
         return { data: migratedTasks };
