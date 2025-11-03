@@ -16,6 +16,7 @@ export const loadState = () => {
     return {
       user: state.user || { currentUser: null, isAuthenticated: false },
       tasks: state.tasks || { items: [], loading: false, error: null },
+      comments: state.comments || { items: [], loading: false, error: null },
     };
   } catch (err) {
     console.error("Error loading state:", err);
@@ -29,11 +30,16 @@ export const saveState = (state: any) => {
   }
 
   try {
-    // Only persist user and tasks data
+    // Persist user, tasks and comments data
     const stateToPersist = {
       user: state.user,
       tasks: {
         items: state.tasks.items,
+        loading: false,
+        error: null,
+      },
+      comments: {
+        items: state.comments?.items ?? [],
         loading: false,
         error: null,
       },

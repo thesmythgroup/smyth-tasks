@@ -1,5 +1,5 @@
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
-import { Task, User, PriorityLevel } from "../types";
+import { Task, User, PriorityLevel, Comment } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import {
   addTask,
@@ -9,6 +9,12 @@ import {
   updateTaskDueDate,
   updateTaskPriority,
 } from "../features/tasksSlice";
+import {
+  addComment,
+  removeComment,
+  setComments as setAllComments,
+  updateComment as updateCommentReducer,
+} from "../features/commentsSlice";
 import { saveState, loadState } from "../utils/localStorage";
 
 // Helper to simulate async behavior
@@ -17,7 +23,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export const localApi = createApi({
   reducerPath: "localApi",
   baseQuery: fakeBaseQuery(),
-  tagTypes: ["Task", "User"],
+  tagTypes: ["Task", "User", "Comment"],
   endpoints: (builder) => ({
     // Task endpoints
     getTasks: builder.query<Task[], void>({
@@ -118,6 +124,78 @@ export const localApi = createApi({
       invalidatesTags: ["Task"],
     }),
 
+    // Comment endpoints
+    getComments: builder.query<Comment[], void>({
+      queryFn: async (_, { dispatch }) => {
+        await delay(100);
+        const state = loadState();
+        const comments = state?.comments?.items || [];
+        dispatch(setAllComments(comments));
+        return { data: comments };
+      },
+      providesTags: ["Comment"],
+    }),
+
+    getTaskComments: builder.query<Comment[], string>({
+      queryFn: async (taskId, { dispatch }) => {
+        await delay(100);
+        const state = loadState();
+        const comments: Comment[] = state?.comments?.items || [];
+        dispatch(setAllComments(comments));
+        return { data: comments.filter((c) => c.taskId === taskId) };
+      },
+      providesTags: (result, error, arg) => [{ type: "Comment", id: arg } as any],
+    }),
+
+    addComment: builder.mutation<
+      Comment,
+      Omit<Comment, "id" | "createdAt" | "updatedAt">
+    >({
+      queryFn: async (payload, { dispatch, getState }) => {
+        await delay(100);
+        const newComment: Comment = {
+          ...payload,
+          id: uuidv4(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        dispatch(addComment(newComment));
+        const state = getState();
+        saveState(state);
+        return { data: newComment };
+      },
+      invalidatesTags: ["Comment"],
+    }),
+
+    updateComment: builder.mutation<Comment, Partial<Comment> & { id: string }>(
+      {
+        queryFn: async (update, { dispatch, getState }) => {
+          await delay(100);
+          dispatch(updateCommentReducer(update));
+          const state = getState();
+          saveState(state);
+          return {
+            data: {
+              ...(update as Comment),
+              updatedAt: new Date().toISOString(),
+            },
+          };
+        },
+        invalidatesTags: ["Comment"],
+      }
+    ),
+
+    deleteComment: builder.mutation<{ success: boolean }, string>({
+      queryFn: async (commentId, { dispatch, getState }) => {
+        await delay(100);
+        dispatch(removeComment(commentId));
+        const state = getState();
+        saveState(state);
+        return { data: { success: true } };
+      },
+      invalidatesTags: ["Comment"],
+    }),
+
     // User endpoints
     getUser: builder.query<User | null, void>({
       queryFn: async () => {
@@ -149,4 +227,9 @@ export const {
   useDeleteTaskMutation,
   useGetUserQuery,
   useUpdateUserMutation,
+  useGetCommentsQuery,
+  useGetTaskCommentsQuery,
+  useAddCommentMutation,
+  useUpdateCommentMutation,
+  useDeleteCommentMutation,
 } = localApi;
