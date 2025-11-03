@@ -5,6 +5,7 @@ import tasksReducer, {
   setTasks,
   clearTasks,
   updateTaskDueDate,
+  updateTaskDescription,
 } from "../tasksSlice";
 import { Task } from "@/lib/types";
 
@@ -12,8 +13,10 @@ const mockTask: Task = {
   id: "1",
   title: "Test Task",
   completed: false,
+  priority: 1,
   userId: "user1",
   dueDate: "2025-10-25",
+  description: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -114,5 +117,35 @@ describe("tasksSlice", () => {
       updateTaskDueDate({ id: mockTask.id, dueDate: null })
     );
     expect(actual.items[0].dueDate).toBeNull();
+  });
+
+  it("should handle updateTaskDescription", () => {
+    const state = {
+      ...initialState,
+      items: [mockTask],
+    };
+    const newDescription = "This is a test description";
+    const actual = tasksReducer(
+      state,
+      updateTaskDescription({ id: mockTask.id, description: newDescription })
+    );
+    expect(actual.items[0].description).toBe(newDescription);
+    expect(actual.items[0].updatedAt).not.toBe(mockTask.updatedAt);
+  });
+
+  it("should handle updateTaskDescription to null", () => {
+    const taskWithDescription: Task = {
+      ...mockTask,
+      description: "Some description",
+    };
+    const state = {
+      ...initialState,
+      items: [taskWithDescription],
+    };
+    const actual = tasksReducer(
+      state,
+      updateTaskDescription({ id: mockTask.id, description: null })
+    );
+    expect(actual.items[0].description).toBeNull();
   });
 });

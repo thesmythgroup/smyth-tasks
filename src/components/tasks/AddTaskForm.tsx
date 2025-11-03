@@ -8,11 +8,20 @@ import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { getTodayDateString } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS } from "@/lib/utils/priorityUtils";
 import toast from "react-hot-toast";
+import dynamic from "next/dynamic";
+import "@uiw/react-md-editor/markdown-editor.css";
+
+// Dynamically import the markdown editor to avoid SSR issues
+const MDEditor = dynamic(() => import("@uiw/react-md-editor").then((mod) => mod.default), {
+  ssr: false,
+});
 
 export function AddTaskForm() {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState<string>(getTodayDateString());
   const [priority, setPriority] = useState<PriorityLevel>(1); // Default to Jalapeño
+  const [description, setDescription] = useState("");
+  const [showDescription, setShowDescription] = useState(false);
   const [addTask, { isLoading }] = useAddTaskMutation();
   const { currentUser } = useSelector((state: RootState) => state.user);
 
@@ -27,11 +36,14 @@ export function AddTaskForm() {
         priority,
         userId: currentUser.id,
         dueDate: dueDate || null,
+        description: description.trim() || null,
       }).unwrap();
 
       setTitle("");
       setDueDate(getTodayDateString());
       setPriority(1); // Reset to Jalapeño
+      setDescription("");
+      setShowDescription(false);
       toast.success("Task added successfully");
     } catch (error) {
       toast.error("Failed to add task");
@@ -83,6 +95,49 @@ export function AddTaskForm() {
           >
             {isLoading ? <LoadingSpinner /> : "Add Task"}
           </button>
+        </div>
+        <div className="flex items-center justify-between">
+          {!showDescription ? (
+            <button
+              type="button"
+              onClick={() => setShowDescription(true)}
+              className="text-gray-500 hover:text-gray-400 text-sm underline"
+              disabled={isLoading}
+            >
+              Add description
+            </button>
+          ) : (
+            <div className="flex-1 w-full">
+              <div data-color-mode="dark">
+                <MDEditor
+                  value={description}
+                  onChange={(val) => setDescription(val || "")}
+                  preview="live"
+                  hideToolbar={false}
+                  visibleDragBar={false}
+                  height={250}
+                  previewOptions={{
+                    rehypePlugins: [],
+                  }}
+                  textareaProps={{
+                    placeholder: "Add a description (Markdown supported)...",
+                    disabled: isLoading,
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDescription(false);
+                  setDescription("");
+                }}
+                className="mt-2 text-gray-400 hover:text-gray-300 text-xs underline"
+                disabled={isLoading}
+              >
+                Remove description
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </form>

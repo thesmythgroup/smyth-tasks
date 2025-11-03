@@ -8,6 +8,7 @@ import {
   toggleTask,
   updateTaskDueDate,
   updateTaskPriority,
+  updateTaskDescription,
 } from "../features/tasksSlice";
 import { saveState, loadState } from "../utils/localStorage";
 
@@ -65,6 +66,7 @@ export const localApi = createApi({
         const newTask: Task = {
           ...task,
           priority: task.priority ?? 1, // Default to Jalapeño (1)
+          description: task.description ?? null,
           id: uuidv4(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -94,6 +96,14 @@ export const localApi = createApi({
         if ("priority" in update) {
           dispatch(
             updateTaskPriority({ id: update.id, priority: update.priority! })
+          );
+        }
+        if ("description" in update) {
+          dispatch(
+            updateTaskDescription({
+              id: update.id,
+              description: update.description || null,
+            })
           );
         }
         const state = getState();
