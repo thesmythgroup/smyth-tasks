@@ -1,30 +1,40 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useSelector } from "react-redux";
-import { RootState, PriorityLevel } from "@/lib/types";
-import { useGetTasksQuery } from "@/lib/services/localApi";
-import { TaskItem } from "./TaskItem";
-import { AddTaskForm } from "./AddTaskForm";
-import { TaskSearch } from "./TaskSearch";
-import { LoadingSpinner } from "../ui/LoadingSpinner";
-import { ErrorMessage } from "../ui/ErrorMessage";
+import {
+  useDeleteTaskMutation,
+  useGetTasksQuery,
+  useUpdateTaskMutation,
+} from "@/lib/services/localApi";
+import { PriorityLevel, RootState } from "@/lib/types";
 import {
   PRIORITY_LEVELS,
-  getPriorityFilterStyles,
   getPriorityFilterInlineStyles,
+  getPriorityFilterStyles,
 } from "@/lib/utils/priorityUtils";
 import { searchTasks } from "@/lib/utils/searchUtils";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { ErrorMessage } from "../ui/ErrorMessage";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { AddTaskForm, AddTaskFormHandle } from "./AddTaskForm";
+import { TaskItem } from "./TaskItem";
+import { TaskSearch } from "./TaskSearch";
 
 export function TaskList() {
   const { data: tasks = [], isLoading, error } = useGetTasksQuery();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
+  const [updateTask] = useUpdateTaskMutation();
+  const [deleteTask] = useDeleteTaskMutation();
 
   const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>(
     "all"
   );
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const taskRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const addFormRef = useRef<AddTaskFormHandle>(null);
 
   const filteredAndSortedTasks = useMemo(() => {
     let filteredTasks = [...tasks];
@@ -54,6 +64,92 @@ export function TaskList() {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     });
   }, [tasks, priorityFilter, searchQuery]);
+
+  const effectiveSelectedTaskId = useMemo(() => {
+    if (filteredAndSortedTasks.length === 0) return null;
+    if (
+      selectedTaskId &&
+      filteredAndSortedTasks.some((t) => t.id === selectedTaskId)
+    ) {
+      return selectedTaskId;
+    }
+    return filteredAndSortedTasks[0].id;
+  }, [filteredAndSortedTasks, selectedTaskId]);
+
+  const currentIndex = useMemo(
+    () =>
+      effectiveSelectedTaskId
+        ? filteredAndSortedTasks.findIndex(
+            (t) => t.id === effectiveSelectedTaskId
+          )
+        : -1,
+    [filteredAndSortedTasks, effectiveSelectedTaskId]
+  );
+
+  // Scroll selected into view
+  useEffect(() => {
+    if (!effectiveSelectedTaskId) return;
+    const node = taskRefs.current[effectiveSelectedTaskId];
+    node?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [effectiveSelectedTaskId]);
+
+  // Global keyboard handler
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      const isEditable =
+        el.tagName === "INPUT" ||
+        el.tagName === "TEXTAREA" ||
+        el.tagName === "SELECT" ||
+        (el as HTMLElement).isContentEditable;
+      if (isEditable) return;
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        addFormRef.current?.focusTitle();
+        return;
+      }
+
+      switch (e.key) {
+        case "ArrowDown": {
+          e.preventDefault();
+          const next = Math.min(
+            (currentIndex < 0 ? 0 : currentIndex) + 1,
+            filteredAndSortedTasks.length - 1
+          );
+          setSelectedTaskId(filteredAndSortedTasks[next]?.id ?? null);
+          break;
+        }
+        case "ArrowUp": {
+          e.preventDefault();
+          const prev = Math.max((currentIndex < 0 ? 0 : currentIndex) - 1, 0);
+          setSelectedTaskId(filteredAndSortedTasks[prev]?.id ?? null);
+          break;
+        }
+        case " ": {
+          if (currentIndex < 0) break;
+          e.preventDefault();
+          const task = filteredAndSortedTasks[currentIndex];
+          updateTask({ id: task.id, completed: !task.completed });
+          break;
+        }
+        case "Delete":
+        case "Backspace": {
+          if (currentIndex < 0) break;
+          e.preventDefault();
+          const task = filteredAndSortedTasks[currentIndex];
+          if (confirm(`Delete task "${task.title}"?`)) {
+            deleteTask(task.id);
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [filteredAndSortedTasks, currentIndex, updateTask, deleteTask]);
 
   if (!isAuthenticated) {
     return (
@@ -85,7 +181,7 @@ export function TaskList() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <AddTaskForm />
+      <AddTaskForm ref={addFormRef} />
 
       {tasks.length > 0 && (
         <div className="mb-6 space-y-4">
@@ -231,12 +327,20 @@ export function TaskList() {
             filteredAndSortedTasks.map((task) => (
               <motion.div
                 key={task.id}
+                ref={(el) => {
+                  taskRefs.current[task.id] = el;
+                }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <TaskItem task={task} searchQuery={searchQuery} />
+                <TaskItem
+                  task={task}
+                  searchQuery={searchQuery}
+                  isSelected={task.id === effectiveSelectedTaskId}
+                  onClick={() => setSelectedTaskId(task.id)}
+                />
               </motion.div>
             ))
           )}
