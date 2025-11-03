@@ -5,12 +5,14 @@ import { Task, PriorityLevel } from "@/lib/types";
 import {
   useUpdateTaskMutation,
   useDeleteTaskMutation,
+  useGetTaskCommentsQuery,
 } from "@/lib/services/localApi";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { formatDateForDisplay } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS, getPriorityStyles } from "@/lib/utils/priorityUtils";
 import { highlightText } from "@/lib/utils/searchUtils";
 import toast from "react-hot-toast";
+import { CommentsDialog } from "./CommentsDialog";
 
 interface TaskItemProps {
   task: Task;
@@ -24,6 +26,8 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editedDate, setEditedDate] = useState(task.dueDate || "");
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const { data: taskComments = [] } = useGetTaskCommentsQuery(task.id);
 
   const handleToggle = async () => {
     try {
@@ -230,20 +234,39 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
             </div>
           </div>
         </div>
-        <button
-          onClick={handleDelete}
-          disabled={isDeleting || isUpdating}
-          className={`ml-4 px-4 py-2 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 ${
-            isDeleting ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          {isDeleting ? (
-            <LoadingSpinner />
-          ) : (
-            <span className="font-medium">Delete</span>
-          )}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsCommentsOpen(true)}
+            disabled={isDeleting || isUpdating}
+            className="relative px-4 py-2 rounded-md text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
+          >
+            <span className="font-medium">Comments</span>
+            {taskComments.length > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full bg-blue-600 text-white text-xs font-semibold">
+                {taskComments.length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting || isUpdating}
+            className={`ml-2 px-4 py-2 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 ${
+              isDeleting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+            }`}
+          >
+            {isDeleting ? (
+              <LoadingSpinner />
+            ) : (
+              <span className="font-medium">Delete</span>
+            )}
+          </button>
+        </div>
       </div>
+      <CommentsDialog
+        taskId={task.id}
+        isOpen={isCommentsOpen}
+        onClose={() => setIsCommentsOpen(false)}
+      />
     </div>
   );
 }

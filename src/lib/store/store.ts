@@ -3,12 +3,14 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 import { loadState, saveState } from "../utils/localStorage";
 import userReducer from "../features/userSlice";
 import tasksReducer from "../features/tasksSlice";
+import commentsReducer from "../features/commentsSlice";
 import { localApi } from "../services/localApi";
 import { RootState } from "../types";
 
 const rootReducer = combineReducers({
   user: userReducer,
   tasks: tasksReducer,
+  comments: commentsReducer,
   [localApi.reducerPath]: localApi.reducer,
 });
 

@@ -19,9 +19,19 @@ export interface Task {
   updatedAt: string;
 }
 
+export interface Comment {
+  id: string;
+  taskId: string;
+  comment: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface RootState {
   user: UserState;
   tasks: TasksState;
+  comments: CommentsState;
 }
 
 export interface UserState {
@@ -31,6 +41,12 @@ export interface UserState {
 
 export interface TasksState {
   items: Task[];
+  loading: boolean;
+  error: string | null;
+}
+
+export interface CommentsState {
+  items: Comment[];
   loading: boolean;
   error: string | null;
 }
