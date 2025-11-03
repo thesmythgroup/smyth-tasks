@@ -18,7 +18,8 @@ import { searchTasks } from "@/lib/utils/searchUtils";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function TaskList() {
-  const { data: tasks = [], isLoading, error } = useGetTasksQuery();
+  const { isLoading, error } = useGetTasksQuery();
+  const tasks = useSelector((state: RootState) => state.tasks.items);
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
 
   const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>(

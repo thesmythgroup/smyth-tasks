@@ -7,12 +7,16 @@ import { useAddTaskMutation } from "@/lib/services/localApi";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { getTodayDateString } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS } from "@/lib/utils/priorityUtils";
+import { TaskTags } from "./TaskTags";
+import { TagSelect } from "./TagSelect";
 import toast from "react-hot-toast";
 
 export function AddTaskForm() {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState<string>(getTodayDateString());
   const [priority, setPriority] = useState<PriorityLevel>(1); // Default to Jalapeño
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [showTagSelect, setShowTagSelect] = useState(false);
   const [addTask, { isLoading }] = useAddTaskMutation();
   const { currentUser } = useSelector((state: RootState) => state.user);
 
@@ -27,15 +31,26 @@ export function AddTaskForm() {
         priority,
         userId: currentUser.id,
         dueDate: dueDate || null,
+        tagIds: selectedTagIds,
       }).unwrap();
 
       setTitle("");
       setDueDate(getTodayDateString());
       setPriority(1); // Reset to Jalapeño
+      setSelectedTagIds([]); // Reset tags
       toast.success("Task added successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to add task");
     }
+  };
+
+  const handleAddTag = (tagId: string) => {
+    setSelectedTagIds([...selectedTagIds, tagId]);
+    setShowTagSelect(false);
+  };
+
+  const handleRemoveTag = (tagId: string) => {
+    setSelectedTagIds(selectedTagIds.filter((id) => id !== tagId));
   };
 
   if (!currentUser) return null;
@@ -43,6 +58,41 @@ export function AddTaskForm() {
   return (
     <form onSubmit={handleSubmit} className="mb-8">
       <div className="flex flex-col gap-4 shadow-lg rounded-lg bg-gray-800 p-4 border border-gray-700">
+        {/* Tags Section */}
+        {(selectedTagIds.length > 0 || showTagSelect) && (
+          <div className="flex flex-col gap-2">
+            {selectedTagIds.length > 0 && (
+              <TaskTags tagIds={selectedTagIds} onRemoveTag={handleRemoveTag} />
+            )}
+            {showTagSelect && (
+              <TagSelect
+                selectedTagIds={selectedTagIds}
+                onTagSelect={handleAddTag}
+                onClose={() => setShowTagSelect(false)}
+              />
+            )}
+            {!showTagSelect && (
+              <button
+                type="button"
+                onClick={() => setShowTagSelect(true)}
+                className="text-sm text-blue-400 hover:text-blue-300 transition-colors text-left"
+                disabled={isLoading}
+              >
+                + Add Tag
+              </button>
+            )}
+          </div>
+        )}
+        {selectedTagIds.length === 0 && !showTagSelect && (
+          <button
+            type="button"
+            onClick={() => setShowTagSelect(true)}
+            className="text-sm text-blue-400 hover:text-blue-300 transition-colors text-left"
+            disabled={isLoading}
+          >
+            + Add Tag
+          </button>
+        )}
         <div className="flex gap-4">
           <input
             type="text"

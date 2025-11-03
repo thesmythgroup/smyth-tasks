@@ -1,16 +1,20 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Task, PriorityLevel } from "@/lib/types";
+import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { Task, PriorityLevel } from '@/lib/types';
 import {
   useUpdateTaskMutation,
   useDeleteTaskMutation,
-} from "@/lib/services/localApi";
-import { LoadingSpinner } from "../ui/LoadingSpinner";
-import { formatDateForDisplay } from "@/lib/utils/dateFormatting";
-import { PRIORITY_LEVELS, getPriorityStyles } from "@/lib/utils/priorityUtils";
-import { highlightText } from "@/lib/utils/searchUtils";
-import toast from "react-hot-toast";
+} from '@/lib/services/localApi';
+import { updateTaskTags } from '@/lib/features/tasksSlice';
+import { LoadingSpinner } from '../ui/LoadingSpinner';
+import { formatDateForDisplay } from '@/lib/utils/dateFormatting';
+import { PRIORITY_LEVELS, getPriorityStyles } from '@/lib/utils/priorityUtils';
+import { highlightText } from '@/lib/utils/searchUtils';
+import { TaskTags } from './TaskTags';
+import { TagSelect } from './TagSelect';
+import toast from 'react-hot-toast';
 
 interface TaskItemProps {
   task: Task;
@@ -18,12 +22,14 @@ interface TaskItemProps {
 }
 
 export function TaskItem({ task, searchQuery }: TaskItemProps) {
+  const dispatch = useDispatch();
   const [updateTask] = useUpdateTaskMutation();
   const [deleteTask] = useDeleteTaskMutation();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditingDate, setIsEditingDate] = useState(false);
-  const [editedDate, setEditedDate] = useState(task.dueDate || "");
+  const [editedDate, setEditedDate] = useState(task.dueDate || '');
+  const [showTagSelect, setShowTagSelect] = useState(false);
 
   const handleToggle = async () => {
     try {
@@ -33,10 +39,10 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
         completed: !task.completed,
       }).unwrap();
       toast.success(
-        `Task ${task.completed ? "uncompleted" : "completed"} successfully`
+        `Task ${task.completed ? 'uncompleted' : 'completed'} successfully`
       );
     } catch {
-      toast.error("Failed to update task");
+      toast.error('Failed to update task');
     } finally {
       setIsUpdating(false);
     }
@@ -46,9 +52,9 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
     try {
       setIsDeleting(true);
       await deleteTask(task.id).unwrap();
-      toast.success("Task deleted successfully");
+      toast.success('Task deleted successfully');
     } catch {
-      toast.error("Failed to delete task");
+      toast.error('Failed to delete task');
       setIsDeleting(false);
     }
   };
@@ -61,16 +67,16 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
         dueDate: editedDate || null,
       }).unwrap();
       setIsEditingDate(false);
-      toast.success("Due date updated successfully");
-    } catch (error) {
-      toast.error("Failed to update due date");
+      toast.success('Due date updated successfully');
+    } catch {
+      toast.error('Failed to update due date');
     } finally {
       setIsUpdating(false);
     }
   };
 
   const handleCancelEdit = () => {
-    setEditedDate(task.dueDate || "");
+    setEditedDate(task.dueDate || '');
     setIsEditingDate(false);
   };
 
@@ -81,7 +87,7 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
     dueDate.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
     const overdue = dueDate < today;
-    console.log("Date check:", { dateString, dueDate, today, overdue });
+    console.log('Date check:', { dateString, dueDate, today, overdue });
     return overdue;
   };
 
@@ -92,12 +98,25 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
         id: task.id,
         priority: newPriority,
       }).unwrap();
-      toast.success("Priority updated successfully");
+      toast.success('Priority updated successfully');
     } catch {
-      toast.error("Failed to update priority");
+      toast.error('Failed to update priority');
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleAddTag = (tagId: string) => {
+    const newTagIds = [...(task.tagIds || []), tagId];
+    dispatch(updateTaskTags({ id: task.id, tagIds: newTagIds }));
+    setShowTagSelect(false);
+    toast.success('Tag added successfully');
+  };
+
+  const handleRemoveTag = (tagId: string) => {
+    const newTagIds = (task.tagIds || []).filter((id) => id !== tagId);
+    dispatch(updateTaskTags({ id: task.id, tagIds: newTagIds }));
+    toast.success('Tag removed successfully');
   };
 
   const renderTaskTitle = () => {
@@ -227,6 +246,30 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="mt-10 flex gap-2 items-center flex-wrap">
+              <TaskTags
+                tagIds={task.tagIds || []}
+                onRemoveTag={handleRemoveTag}
+              />
+              {showTagSelect && (
+                <div className="min-w-[200px]">
+                  <TagSelect
+                    selectedTagIds={task.tagIds || []}
+                    onTagSelect={handleAddTag}
+                    onClose={() => setShowTagSelect(false)}
+                  />
+                </div>
+              )}
+              {!showTagSelect && (
+                <button
+                  onClick={() => setShowTagSelect(true)}
+                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors whitespace-nowrap"
+                  disabled={isDeleting || isUpdating}
+                >
+                  + Add Tag
+                </button>
+              )}
             </div>
           </div>
         </div>
