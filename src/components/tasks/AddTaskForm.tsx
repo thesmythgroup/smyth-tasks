@@ -1,20 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState, PriorityLevel } from "@/lib/types";
 import { useAddTaskMutation } from "@/lib/services/localApi";
-import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { PriorityLevel, RootState } from "@/lib/types";
 import { getTodayDateString } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS } from "@/lib/utils/priorityUtils";
+import { useImperativeHandle, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
 
-export function AddTaskForm() {
+export type AddTaskFormHandle = { focusTitle: () => void };
+
+export function AddTaskForm(props: { ref?: React.Ref<AddTaskFormHandle> }) {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState<string>(getTodayDateString());
   const [priority, setPriority] = useState<PriorityLevel>(1); // Default to Jalapeño
   const [addTask, { isLoading }] = useAddTaskMutation();
   const { currentUser } = useSelector((state: RootState) => state.user);
+
+  const titleRef = useRef<HTMLInputElement>(null);
+  useImperativeHandle(
+    props.ref,
+    () => ({
+      focusTitle: () => titleRef.current?.focus(),
+    }),
+    []
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +52,10 @@ export function AddTaskForm() {
   if (!currentUser) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="mb-8">
+    <form
+      onSubmit={handleSubmit}
+      className="mb-8"
+    >
       <div className="flex flex-col gap-4 shadow-lg rounded-lg bg-gray-800 p-4 border border-gray-700">
         <div className="flex gap-4">
           <input
@@ -49,6 +63,7 @@ export function AddTaskForm() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Add a new task..."
+            ref={titleRef}
             className="flex-1 rounded-lg bg-gray-700 border-2 border-gray-600 text-gray-100 placeholder-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 py-3 px-4 text-base transition-all duration-200 hover:border-gray-500"
             disabled={isLoading}
             required
@@ -69,7 +84,10 @@ export function AddTaskForm() {
             disabled={isLoading}
           >
             {Object.values(PRIORITY_LEVELS).map((level) => (
-              <option key={level.id} value={level.id}>
+              <option
+                key={level.id}
+                value={level.id}
+              >
                 {level.displayText}
               </option>
             ))}

@@ -15,9 +15,11 @@ import toast from "react-hot-toast";
 interface TaskItemProps {
   task: Task;
   searchQuery?: string;
+  isSelected?: boolean;
+  onClick?: () => void;
 }
 
-export function TaskItem({ task, searchQuery }: TaskItemProps) {
+export function TaskItem({ task, searchQuery, isSelected, onClick }: TaskItemProps) {
   const [updateTask] = useUpdateTaskMutation();
   const [deleteTask] = useDeleteTaskMutation();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -130,9 +132,10 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
 
   return (
     <div
+      onClick={onClick}
       className={`group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${getPriorityStyles(
         task.priority
-      )}`}
+      )} ${isSelected ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900" : ""}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4 flex-1">
