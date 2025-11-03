@@ -6,8 +6,10 @@ const mockTask = {
   id: "1",
   title: "Test Task",
   completed: false,
+  priority: 1,
   userId: "user1",
   dueDate: "2025-10-25",
+  description: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -97,5 +99,19 @@ describe("TaskItem", () => {
       id: mockTask.id,
       dueDate: "2025-11-01",
     });
+  });
+
+  it("shows 'Add description' button when no description", () => {
+    render(<TaskItem task={mockTask} />);
+    expect(screen.getByText("Add description")).toBeInTheDocument();
+  });
+
+  it("shows description preview when description exists", () => {
+    const taskWithDescription = {
+      ...mockTask,
+      description: "This is a test description",
+    };
+    render(<TaskItem task={taskWithDescription} />);
+    expect(screen.getByText("This is a test description")).toBeInTheDocument();
   });
 });

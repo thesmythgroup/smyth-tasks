@@ -64,8 +64,10 @@ describe("AddTaskForm", () => {
     expect(mockAddTask).toHaveBeenCalledWith({
       title: "New Test Task",
       completed: false,
+      priority: 1,
       userId: mockUser.id,
       dueDate: "2025-12-31",
+      description: null,
     });
   });
 

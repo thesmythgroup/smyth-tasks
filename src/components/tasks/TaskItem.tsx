@@ -10,6 +10,7 @@ import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { formatDateForDisplay } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS, getPriorityStyles } from "@/lib/utils/priorityUtils";
 import { highlightText } from "@/lib/utils/searchUtils";
+import { TaskDescriptionEditor } from "./TaskDescriptionEditor";
 import toast from "react-hot-toast";
 
 interface TaskItemProps {
@@ -95,6 +96,21 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
       toast.success("Priority updated successfully");
     } catch {
       toast.error("Failed to update priority");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDescriptionUpdate = async (description: string | null) => {
+    try {
+      setIsUpdating(true);
+      await updateTask({
+        id: task.id,
+        description,
+      }).unwrap();
+      toast.success("Description updated successfully");
+    } catch {
+      toast.error("Failed to update description");
     } finally {
       setIsUpdating(false);
     }
@@ -227,6 +243,14 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="mt-2">
+              <TaskDescriptionEditor
+                initialValue={task.description}
+                onSave={handleDescriptionUpdate}
+                isLoading={isUpdating}
+                showPreview={true}
+              />
             </div>
           </div>
         </div>

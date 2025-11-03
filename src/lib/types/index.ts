@@ -15,6 +15,7 @@ export interface Task {
   priority: PriorityLevel;
   userId: string;
   dueDate: string | null;
+  description: string | null;
   createdAt: string;
   updatedAt: string;
 }

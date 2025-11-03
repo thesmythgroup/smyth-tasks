@@ -17,6 +17,9 @@ export function searchTasks<T extends Record<string, any>>(
   return tasks.filter(task => {
     return config.fields.some(field => {
       const fieldValue = task[field];
+      if (fieldValue === null || fieldValue === undefined) {
+        return false;
+      }
       if (typeof fieldValue !== 'string') {
         return false;
       }
