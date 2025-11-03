@@ -23,14 +23,15 @@ describe("localStorage utils", () => {
     const mockState = {
       user: { currentUser: null, isAuthenticated: false },
       tasks: { items: [], loading: false, error: null },
+      tags: { items: [] },
     };
 
     saveState(mockState);
 
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      "smyth-task-state",
-      JSON.stringify(mockState)
-    );
+    expect(localStorage.setItem).toHaveBeenCalled();
+    const [key, value] = localStorage.setItem.mock.calls[0];
+    expect(key).toBe("smyth-task-state");
+    expect(JSON.parse(value)).toEqual(mockState);
 
     localStorage.getItem.mockReturnValueOnce(JSON.stringify(mockState));
 
@@ -59,6 +60,7 @@ describe("localStorage utils", () => {
     expect(state).toEqual({
       user: { currentUser: null, isAuthenticated: false },
       tasks: { items: [], loading: false, error: null },
+      tags: { items: [] },
     });
   });
 });
