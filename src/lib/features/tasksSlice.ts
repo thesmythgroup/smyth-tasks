@@ -55,6 +55,13 @@ export const tasksSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
+    removeTagFromTasks: (state, action: PayloadAction<string>) => {
+      state.items.forEach((task) => {
+        if (task.tagIds) {
+          task.tagIds = task.tagIds.filter((tagId) => tagId !== action.payload);
+        }
+      });
+    },
   },
 });
 
@@ -68,5 +75,6 @@ export const {
   setLoading,
   setError,
   clearTasks,
+  removeTagFromTasks,
 } = tasksSlice.actions;
 export default tasksSlice.reducer;

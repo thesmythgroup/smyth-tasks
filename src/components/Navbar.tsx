@@ -1,12 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "@/lib/types";
-import { logout } from "@/lib/features/userSlice";
-import { LoginModal } from "./auth/LoginModal";
-import { AppDispatch } from "@/lib/store/store";
-import { loadState } from "@/lib/utils/localStorage";
+import { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import Link from 'next/link';
+import { RootState } from '@/lib/types';
+import { logout } from '@/lib/features/userSlice';
+import { LoginModal } from './auth/LoginModal';
+import { AppDispatch } from '@/lib/store/store';
+import { loadState } from '@/lib/utils/localStorage';
 
 export function Navbar() {
   const dispatch = useDispatch<AppDispatch>();
@@ -34,6 +35,12 @@ export function Navbar() {
                     <span className="text-gray-300 font-medium">
                       Welcome, {currentUser.name}
                     </span>
+                    <Link
+                      href="/tags"
+                      className="text-gray-300 hover:text-gray-100 font-medium transition-colors hover:underline"
+                    >
+                      Tags
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="bg-red-500 hover:bg-red-600 text-gray-100 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800"
