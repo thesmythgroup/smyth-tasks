@@ -1,13 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import Link from 'next/link';
-import { RootState } from '@/lib/types';
-import { logout } from '@/lib/features/userSlice';
-import { LoginModal } from './auth/LoginModal';
-import { AppDispatch } from '@/lib/store/store';
-import { loadState } from '@/lib/utils/localStorage';
+import { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import Link from "next/link";
+import { RootState } from "@/lib/types";
+import { logout } from "@/lib/features/userSlice";
+import { LoginModal } from "./auth/LoginModal";
+import { AppDispatch } from "@/lib/store/store";
 
 export function Navbar() {
   const dispatch = useDispatch<AppDispatch>();
@@ -26,7 +25,12 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold">Smyth Tasks</h1>
+              <Link
+                href="/"
+                className="text-2xl font-bold hover:text-gray-300 transition-colors"
+              >
+                Smyth Tasks
+              </Link>
             </div>
             <div className="flex items-center">
               <div className="flex items-center space-x-6">
