@@ -15,22 +15,34 @@ import {
   getPriorityFilterInlineStyles,
 } from "@/lib/utils/priorityUtils";
 import { searchTasks } from "@/lib/utils/searchUtils";
+import { getColorStyles } from "@/lib/utils/colorUtils";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function TaskList() {
-  const { data: tasks = [], isLoading, error } = useGetTasksQuery();
+  const { isLoading, error } = useGetTasksQuery();
+  const tasks = useSelector((state: RootState) => state.tasks.items);
+  const tags = useSelector((state: RootState) => state.tags.items);
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
 
   const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>(
     "all"
   );
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredAndSortedTasks = useMemo(() => {
     let filteredTasks = [...tasks];
 
     if (priorityFilter !== "all") {
-      filteredTasks = tasks.filter((task) => task.priority === priorityFilter);
+      filteredTasks = filteredTasks.filter(
+        (task) => task.priority === priorityFilter
+      );
+    }
+
+    if (tagFilter !== null) {
+      filteredTasks = filteredTasks.filter(
+        (task) => task.tagIds && task.tagIds.includes(tagFilter)
+      );
     }
 
     if (searchQuery.trim()) {
@@ -53,7 +65,7 @@ export function TaskList() {
       if (!b.dueDate) return -1;
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     });
-  }, [tasks, priorityFilter, searchQuery]);
+  }, [tasks, priorityFilter, searchQuery, tagFilter]);
 
   if (!isAuthenticated) {
     return (
@@ -140,64 +152,42 @@ export function TaskList() {
 
               <div className="flex flex-col gap-2">
                 <span className="text-sm text-gray-400 font-medium">Tags:</span>
-                <div className="flex gap-2">
-                  <button
-                    disabled
-                    className="px-4 py-2 rounded-md text-xs font-medium bg-gray-800 text-gray-500 border border-gray-600 cursor-not-allowed opacity-60"
-                    style={{
-                      paddingLeft: "1rem",
-                      paddingRight: "1rem",
-                      paddingTop: "0.5rem",
-                      paddingBottom: "0.5rem",
-                      borderRadius: "0.375rem",
-                      fontSize: "0.75rem",
-                      fontWeight: "500",
-                      backgroundColor: "#1F2937",
-                      color: "#6B7280",
-                      borderColor: "#4B5563",
-                    }}
-                  >
-                    Work
-                  </button>
-                  <button
-                    disabled
-                    className="px-4 py-2 rounded-md text-xs font-medium bg-gray-800 text-gray-500 border border-gray-600 cursor-not-allowed opacity-60"
-                    style={{
-                      paddingLeft: "1rem",
-                      paddingRight: "1rem",
-                      paddingTop: "0.5rem",
-                      paddingBottom: "0.5rem",
-                      borderRadius: "0.375rem",
-                      fontSize: "0.75rem",
-                      fontWeight: "500",
-                      backgroundColor: "#1F2937",
-                      color: "#6B7280",
-                      borderColor: "#4B5563",
-                    }}
-                  >
-                    Personal
-                  </button>
-                  <button
-                    disabled
-                    className="px-4 py-2 rounded-md text-xs font-medium bg-gray-800 text-gray-500 border border-gray-600 cursor-not-allowed opacity-60"
-                    style={{
-                      paddingLeft: "1rem",
-                      paddingRight: "1rem",
-                      paddingTop: "0.5rem",
-                      paddingBottom: "0.5rem",
-                      borderRadius: "0.375rem",
-                      fontSize: "0.75rem",
-                      fontWeight: "500",
-                      backgroundColor: "#1F2937",
-                      color: "#6B7280",
-                      borderColor: "#4B5563",
-                    }}
-                  >
-                    Urgent
-                  </button>
-                  <span className="px-3 py-2 text-xs text-gray-500 italic">
-                    Coming Soon
-                  </span>
+                <div className="flex flex-wrap gap-2">
+                  {tags.length === 0 ? (
+                    <span className="px-3 py-2 text-xs text-gray-500 italic">
+                      No tags created yet
+                    </span>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setTagFilter(null)}
+                        className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 ${
+                          tagFilter === null
+                            ? "bg-blue-600 text-white border-2 border-blue-500"
+                            : "bg-gray-700 text-gray-300 hover:bg-gray-600 border-2 border-gray-600"
+                        }`}
+                      >
+                        All
+                      </button>
+                      {tags.map((tag) => {
+                        const colorStyles = getColorStyles(tag.color);
+                        const isSelected = tagFilter === tag.id;
+                        return (
+                          <button
+                            key={tag.id}
+                            onClick={() => setTagFilter(tag.id)}
+                            className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 border-2 ${
+                              isSelected
+                                ? `${colorStyles.bgClass} ${colorStyles.textClass} ${colorStyles.borderClass} font-bold`
+                                : `bg-gray-700/50 text-gray-400 border-gray-600 hover:${colorStyles.bgClass} hover:${colorStyles.textClass}`
+                            }`}
+                          >
+                            {tag.name}
+                          </button>
+                        );
+                      })}
+                    </>
+                  )}
                 </div>
               </div>
             </div>

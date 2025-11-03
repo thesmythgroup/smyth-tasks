@@ -1,15 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useDispatch } from "react-redux";
 import { Task, PriorityLevel } from "@/lib/types";
 import {
   useUpdateTaskMutation,
   useDeleteTaskMutation,
 } from "@/lib/services/localApi";
+import { updateTaskTags } from "@/lib/features/tasksSlice";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { formatDateForDisplay } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS, getPriorityStyles } from "@/lib/utils/priorityUtils";
 import { highlightText } from "@/lib/utils/searchUtils";
+import { TaskTags } from "./TaskTags";
+import { TagSelect } from "./TagSelect";
 import toast from "react-hot-toast";
 
 interface TaskItemProps {
@@ -18,12 +22,14 @@ interface TaskItemProps {
 }
 
 export function TaskItem({ task, searchQuery }: TaskItemProps) {
+  const dispatch = useDispatch();
   const [updateTask] = useUpdateTaskMutation();
   const [deleteTask] = useDeleteTaskMutation();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editedDate, setEditedDate] = useState(task.dueDate || "");
+  const [showTagSelect, setShowTagSelect] = useState(false);
 
   const handleToggle = async () => {
     try {
@@ -62,7 +68,7 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
       }).unwrap();
       setIsEditingDate(false);
       toast.success("Due date updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update due date");
     } finally {
       setIsUpdating(false);
@@ -80,9 +86,7 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
     const today = new Date();
     dueDate.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
-    const overdue = dueDate < today;
-    console.log("Date check:", { dateString, dueDate, today, overdue });
-    return overdue;
+    return dueDate < today;
   };
 
   const handlePriorityChange = async (newPriority: PriorityLevel) => {
@@ -98,6 +102,19 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleAddTag = (tagId: string) => {
+    const newTagIds = [...(task.tagIds || []), tagId];
+    dispatch(updateTaskTags({ id: task.id, tagIds: newTagIds }));
+    setShowTagSelect(false);
+    toast.success("Tag added successfully");
+  };
+
+  const handleRemoveTag = (tagId: string) => {
+    const newTagIds = (task.tagIds || []).filter((id) => id !== tagId);
+    dispatch(updateTaskTags({ id: task.id, tagIds: newTagIds }));
+    toast.success("Tag removed successfully");
   };
 
   const renderTaskTitle = () => {
@@ -227,6 +244,30 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="mt-10 flex gap-2 items-center flex-wrap">
+              <TaskTags
+                tagIds={task.tagIds || []}
+                onRemoveTag={handleRemoveTag}
+              />
+              {showTagSelect && (
+                <div className="min-w-[200px]">
+                  <TagSelect
+                    selectedTagIds={task.tagIds || []}
+                    onTagSelect={handleAddTag}
+                    onClose={() => setShowTagSelect(false)}
+                  />
+                </div>
+              )}
+              {!showTagSelect && (
+                <button
+                  onClick={() => setShowTagSelect(true)}
+                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors whitespace-nowrap"
+                  disabled={isDeleting || isUpdating}
+                >
+                  + Add Tag
+                </button>
+              )}
             </div>
           </div>
         </div>

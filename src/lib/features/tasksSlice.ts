@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Task, TasksState, PriorityLevel } from "../types";
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Task, TasksState, PriorityLevel } from '../types';
 
 const initialState: TasksState = {
   items: [],
@@ -21,7 +21,10 @@ export const tasksSlice = createSlice({
         task.updatedAt = new Date().toISOString();
       }
     },
-    updateTaskPriority: (state, action: PayloadAction<{ id: string; priority: PriorityLevel }>) => {
+    updateTaskPriority: (
+      state,
+      action: PayloadAction<{ id: string; priority: PriorityLevel }>
+    ) => {
       const task = state.items.find((t) => t.id === action.payload.id);
       if (task) {
         task.priority = action.payload.priority;
@@ -55,6 +58,23 @@ export const tasksSlice = createSlice({
       state.loading = false;
       state.error = null;
     },
+    removeTagFromTasks: (state, action: PayloadAction<string>) => {
+      state.items.forEach((task) => {
+        if (task.tagIds) {
+          task.tagIds = task.tagIds.filter((tagId) => tagId !== action.payload);
+        }
+      });
+    },
+    updateTaskTags: (
+      state,
+      action: PayloadAction<{ id: string; tagIds: string[] }>
+    ) => {
+      const task = state.items.find((t) => t.id === action.payload.id);
+      if (task) {
+        task.tagIds = action.payload.tagIds;
+        task.updatedAt = new Date().toISOString();
+      }
+    },
   },
 });
 
@@ -68,5 +88,7 @@ export const {
   setLoading,
   setError,
   clearTasks,
+  removeTagFromTasks,
+  updateTaskTags,
 } = tasksSlice.actions;
 export default tasksSlice.reducer;

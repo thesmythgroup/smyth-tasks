@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import Link from "next/link";
 import { RootState } from "@/lib/types";
 import { logout } from "@/lib/features/userSlice";
 import { LoginModal } from "./auth/LoginModal";
 import { AppDispatch } from "@/lib/store/store";
-import { loadState } from "@/lib/utils/localStorage";
 
 export function Navbar() {
   const dispatch = useDispatch<AppDispatch>();
@@ -25,7 +25,12 @@ export function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold">Smyth Tasks</h1>
+              <Link
+                href="/"
+                className="text-2xl font-bold hover:text-gray-300 transition-colors"
+              >
+                Smyth Tasks
+              </Link>
             </div>
             <div className="flex items-center">
               <div className="flex items-center space-x-6">
@@ -34,6 +39,12 @@ export function Navbar() {
                     <span className="text-gray-300 font-medium">
                       Welcome, {currentUser.name}
                     </span>
+                    <Link
+                      href="/tags"
+                      className="text-gray-300 hover:text-gray-100 font-medium transition-colors hover:underline"
+                    >
+                      Tags
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="bg-red-500 hover:bg-red-600 text-gray-100 px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800"

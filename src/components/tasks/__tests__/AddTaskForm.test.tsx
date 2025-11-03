@@ -66,6 +66,8 @@ describe("AddTaskForm", () => {
       completed: false,
       userId: mockUser.id,
       dueDate: "2025-12-31",
+      priority: 1,
+      tagIds: [],
     });
   });
 
