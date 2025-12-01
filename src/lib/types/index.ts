@@ -17,6 +17,7 @@ export interface Task {
   dueDate: string | null;
   createdAt: string;
   updatedAt: string;
+  order?: number; // Global position for custom ordering (not per-priority)
 }
 
 export interface RootState {
