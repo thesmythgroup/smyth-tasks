@@ -11,6 +11,7 @@ export type PriorityLevel = 0 | 1 | 2; // 0: Ghost Pepper, 1: Jalapeño, 2: Minn
 export interface Task {
   id: string;
   title: string;
+  description: string | null;
   completed: boolean;
   priority: PriorityLevel;
   userId: string;

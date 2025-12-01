@@ -2,17 +2,25 @@
 
 import { useState } from "react";
 import { useSelector } from "react-redux";
+import dynamic from "next/dynamic";
 import { RootState, PriorityLevel } from "@/lib/types";
 import { useAddTaskMutation } from "@/lib/services/localApi";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { getTodayDateString } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS } from "@/lib/utils/priorityUtils";
 import toast from "react-hot-toast";
+import "@uiw/react-md-editor/markdown-editor.css";
+import "@uiw/react-markdown-preview/markdown.css";
+
+// Dynamically import MDEditor to avoid SSR issues
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
 export function AddTaskForm() {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState<string>(getTodayDateString());
   const [priority, setPriority] = useState<PriorityLevel>(1); // Default to Jalapeño
+  const [description, setDescription] = useState("");
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [addTask, { isLoading }] = useAddTaskMutation();
   const { currentUser } = useSelector((state: RootState) => state.user);
 
@@ -23,6 +31,7 @@ export function AddTaskForm() {
     try {
       await addTask({
         title: title.trim(),
+        description: description.trim() || null,
         completed: false,
         priority,
         userId: currentUser.id,
@@ -30,6 +39,8 @@ export function AddTaskForm() {
       }).unwrap();
 
       setTitle("");
+      setDescription("");
+      setIsDescriptionExpanded(false);
       setDueDate(getTodayDateString());
       setPriority(1); // Reset to Jalapeño
       toast.success("Task added successfully");
@@ -83,6 +94,41 @@ export function AddTaskForm() {
           >
             {isLoading ? <LoadingSpinner /> : "Add Task"}
           </button>
+        </div>
+
+        {/* Expandable Description Section */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+            className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-300 transition-colors"
+            disabled={isLoading}
+          >
+            <svg
+              className={`w-4 h-4 transition-transform ${isDescriptionExpanded ? "rotate-90" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            <span>{isDescriptionExpanded ? "Hide notes" : "Add notes (optional)"}</span>
+            {description && !isDescriptionExpanded && (
+              <span className="text-blue-400 text-xs">(has content)</span>
+            )}
+          </button>
+
+          {isDescriptionExpanded && (
+            <div className="mt-3" data-color-mode="dark">
+              <MDEditor
+                value={description}
+                onChange={(value) => setDescription(value || "")}
+                preview="edit"
+                height={150}
+                className="!bg-gray-700"
+              />
+            </div>
+          )}
         </div>
       </div>
     </form>

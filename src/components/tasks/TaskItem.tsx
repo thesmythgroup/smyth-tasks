@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Task, PriorityLevel } from "@/lib/types";
 import {
   useUpdateTaskMutation,
@@ -11,6 +12,15 @@ import { formatDateForDisplay } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS, getPriorityStyles } from "@/lib/utils/priorityUtils";
 import { highlightText } from "@/lib/utils/searchUtils";
 import toast from "react-hot-toast";
+import "@uiw/react-md-editor/markdown-editor.css";
+import "@uiw/react-markdown-preview/markdown.css";
+
+// Dynamically import MDEditor and Markdown to avoid SSR issues
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+const MarkdownPreview = dynamic(
+  () => import("@uiw/react-md-editor").then((mod) => mod.default.Markdown),
+  { ssr: false }
+);
 
 interface TaskItemProps {
   task: Task;
@@ -24,6 +34,11 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editedDate, setEditedDate] = useState(task.dueDate || "");
+  
+  // Description state
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editedDescription, setEditedDescription] = useState(task.description || "");
 
   const handleToggle = async () => {
     try {
@@ -72,6 +87,27 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
   const handleCancelEdit = () => {
     setEditedDate(task.dueDate || "");
     setIsEditingDate(false);
+  };
+
+  const handleDescriptionUpdate = async () => {
+    try {
+      setIsUpdating(true);
+      await updateTask({
+        id: task.id,
+        description: editedDescription || null,
+      }).unwrap();
+      setIsEditingDescription(false);
+      toast.success("Description updated successfully");
+    } catch {
+      toast.error("Failed to update description");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCancelDescriptionEdit = () => {
+    setEditedDescription(task.description || "");
+    setIsEditingDescription(false);
   };
 
   const isOverdue = (dateString: string | null): boolean => {
@@ -128,15 +164,111 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
     );
   };
 
+  // Truncate description for preview (first ~100 chars)
+  const getTruncatedDescription = (text: string | null, maxLength = 100) => {
+    if (!text) return "";
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength).trim() + "...";
+  };
+
+  const renderDescriptionSection = () => {
+    // Editing mode
+    if (isEditingDescription) {
+      return (
+        <div className="mt-3 border-t border-gray-700 pt-3" data-color-mode="dark">
+          <MDEditor
+            value={editedDescription}
+            onChange={(value) => setEditedDescription(value || "")}
+            preview="live"
+            height={200}
+            className="!bg-gray-700"
+          />
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={handleDescriptionUpdate}
+              disabled={isUpdating}
+              className="px-3 py-1 bg-blue-600 text-gray-100 text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+            >
+              {isUpdating ? "Saving..." : "Save"}
+            </button>
+            <button
+              onClick={handleCancelDescriptionEdit}
+              disabled={isUpdating}
+              className="px-3 py-1 text-gray-400 text-sm rounded-md hover:text-gray-300 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // Has description - show preview/expanded view
+    if (task.description) {
+      return (
+        <div className="mt-3 border-t border-gray-700 pt-3">
+          <div className="flex items-center justify-between mb-2">
+            <button
+              onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+              className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-300 transition-colors"
+            >
+              <svg
+                className={`w-4 h-4 transition-transform ${isDescriptionExpanded ? "rotate-90" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              <span>Notes</span>
+            </button>
+            <button
+              onClick={() => setIsEditingDescription(true)}
+              className="text-blue-400 hover:text-blue-300 text-sm underline"
+              disabled={isDeleting}
+            >
+              Edit
+            </button>
+          </div>
+          
+          {isDescriptionExpanded ? (
+            // Full markdown preview
+            <div data-color-mode="dark" className="prose prose-invert prose-sm max-w-none">
+              <MarkdownPreview source={task.description || ""} />
+            </div>
+          ) : (
+            // Truncated preview
+            <p className="text-sm text-gray-400 cursor-pointer" onClick={() => setIsDescriptionExpanded(true)}>
+              {getTruncatedDescription(task.description)}
+            </p>
+          )}
+        </div>
+      );
+    }
+
+    // No description - show add button
+    return (
+      <div className="mt-3">
+        <button
+          onClick={() => setIsEditingDescription(true)}
+          className="text-gray-500 hover:text-gray-400 text-sm underline"
+          disabled={isDeleting}
+        >
+          Add notes
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div
       className={`group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${getPriorityStyles(
         task.priority
       )}`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4 flex-1">
-          <div className="relative">
+      <div className="flex items-start justify-between">
+        <div className="flex items-start space-x-4 flex-1">
+          <div className="relative mt-1">
             {isUpdating ? (
               <div className="h-6 w-6 flex items-center justify-center">
                 <LoadingSpinner />
@@ -228,6 +360,9 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
                 ))}
               </select>
             </div>
+            
+            {/* Description Section */}
+            {renderDescriptionSection()}
           </div>
         </div>
         <button

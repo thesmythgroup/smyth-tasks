@@ -7,6 +7,7 @@ import {
   setTasks,
   toggleTask,
   updateTaskDueDate,
+  updateTaskDescription,
   updateTaskPriority,
 } from "../features/tasksSlice";
 import { saveState, loadState } from "../utils/localStorage";
@@ -26,27 +27,42 @@ export const localApi = createApi({
         const state = loadState();
         const tasks = state?.tasks?.items || [];
 
-        // Migrate old string-based priorities to numeric IDs
+        // Migrate old tasks: string-based priorities to numeric IDs, add description field
         const migratedTasks = tasks.map(
           (task: Task | (Omit<Task, "priority"> & { priority: string })) => {
+            let priority: PriorityLevel = typeof task.priority === "number" ? task.priority : 1;
+            
+            // Migrate string priorities to numeric IDs
             if (typeof task.priority === "string") {
-              let priorityId: PriorityLevel;
               switch (task.priority) {
                 case "ghost-pepper":
-                  priorityId = 0;
+                  priority = 0;
                   break;
                 case "jalapeño":
-                  priorityId = 1;
+                  priority = 1;
                   break;
                 case "minnesotan":
-                  priorityId = 2;
+                  priority = 2;
                   break;
                 default:
-                  priorityId = 1; // Default to Jalapeño
+                  priority = 1; // Default to Jalapeño
               }
-              return { ...task, priority: priorityId };
             }
-            return task;
+            
+            // Build migrated task with description field
+            const migratedTask: Task = {
+              id: task.id,
+              title: task.title,
+              description: "description" in task ? task.description : null,
+              completed: task.completed,
+              priority,
+              userId: task.userId,
+              dueDate: task.dueDate,
+              createdAt: task.createdAt,
+              updatedAt: task.updatedAt,
+            };
+            
+            return migratedTask;
           }
         );
 
@@ -65,6 +81,7 @@ export const localApi = createApi({
         const newTask: Task = {
           ...task,
           priority: task.priority ?? 1, // Default to Jalapeño (1)
+          description: task.description ?? null,
           id: uuidv4(),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -94,6 +111,14 @@ export const localApi = createApi({
         if ("priority" in update) {
           dispatch(
             updateTaskPriority({ id: update.id, priority: update.priority! })
+          );
+        }
+        if ("description" in update) {
+          dispatch(
+            updateTaskDescription({
+              id: update.id,
+              description: update.description ?? null,
+            })
           );
         }
         const state = getState();
