@@ -17,6 +17,7 @@ interface TaskItemProps {
   searchQuery?: string;
   isSelected?: boolean;
   onSelect?: () => void;
+  onTaskClick?: (e: React.MouseEvent) => void;
   isSelectionMode?: boolean;
 }
 
@@ -25,6 +26,7 @@ export function TaskItem({
   searchQuery,
   isSelected = false,
   onSelect,
+  onTaskClick,
   isSelectionMode = false,
 }: TaskItemProps) {
   const [updateTask] = useUpdateTaskMutation();
@@ -143,21 +145,13 @@ export function TaskItem({
         isSelected
           ? "border-blue-500 bg-gray-800/80 shadow-xl"
           : "border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl"
-      } ${getPriorityStyles(task.priority)}`}
+      } ${getPriorityStyles(task.priority)} ${
+        isSelectionMode ? "cursor-pointer" : ""
+      }`}
+      onClick={onTaskClick || undefined}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4 flex-1">
-          {isSelectionMode && (
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={isSelected}
-                onChange={onSelect}
-                className="h-6 w-6 text-blue-500 rounded-md bg-gray-700 border-2 border-gray-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors hover:border-gray-500 cursor-pointer"
-                disabled={isUpdating || isDeleting}
-              />
-            </div>
-          )}
           <div className="relative">
             {isUpdating ? (
               <div className="h-6 w-6 flex items-center justify-center">
@@ -167,9 +161,13 @@ export function TaskItem({
               <input
                 type="checkbox"
                 checked={task.completed}
-                onChange={handleToggle}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  handleToggle();
+                }}
+                onClick={(e) => e.stopPropagation()}
                 className="h-6 w-6 text-blue-500 rounded-md bg-gray-700 border-2 border-gray-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors hover:border-gray-500 cursor-pointer"
-                disabled={isUpdating || isDeleting || isSelectionMode}
+                disabled={isUpdating || isDeleting}
               />
             )}
           </div>
@@ -191,7 +189,10 @@ export function TaskItem({
                     Due Date: {formatDateForDisplay(task.dueDate)}
                   </span>{" "}
                   <button
-                    onClick={() => setIsEditingDate(true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditingDate(true);
+                    }}
                     className="ml-6 text-blue-400 hover:text-blue-300 underline"
                     disabled={isDeleting}
                   >
@@ -204,19 +205,29 @@ export function TaskItem({
                   <input
                     type="date"
                     value={editedDate}
-                    onChange={(e) => setEditedDate(e.target.value)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setEditedDate(e.target.value);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
                     className="rounded-md bg-gray-700 border-2 border-gray-600 text-gray-100 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 py-1 px-2 text-sm"
                     disabled={isUpdating}
                   />
                   <button
-                    onClick={handleDateUpdate}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDateUpdate();
+                    }}
                     disabled={isUpdating}
                     className="px-3 py-1 bg-blue-600 text-gray-100 text-sm rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
                   >
                     {isUpdating ? "Saving..." : "Save"}
                   </button>
                   <button
-                    onClick={handleCancelEdit}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCancelEdit();
+                    }}
                     disabled={isUpdating}
                     className="px-3 py-1 text-gray-400 text-sm rounded-md hover:text-gray-300 transition-colors"
                   >
@@ -226,7 +237,10 @@ export function TaskItem({
               )}
               {!task.dueDate && !isEditingDate && (
                 <button
-                  onClick={() => setIsEditingDate(true)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsEditingDate(true);
+                  }}
                   className="mt-2 text-gray-500 hover:text-gray-400 text-sm underline"
                   disabled={isDeleting}
                 >
@@ -237,9 +251,11 @@ export function TaskItem({
             <div className="mt-1">
               <select
                 value={task.priority}
-                onChange={(e) =>
-                  handlePriorityChange(Number(e.target.value) as PriorityLevel)
-                }
+                onChange={(e) => {
+                  e.stopPropagation();
+                  handlePriorityChange(Number(e.target.value) as PriorityLevel);
+                }}
+                onClick={(e) => e.stopPropagation()}
                 className="text-sm bg-gray-700 border border-gray-600 text-gray-300 rounded px-2 py-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 disabled={isUpdating || isDeleting}
               >
@@ -253,7 +269,10 @@ export function TaskItem({
           </div>
         </div>
         <button
-          onClick={handleDelete}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDelete();
+          }}
           disabled={isDeleting || isUpdating}
           className={`ml-4 px-4 py-2 rounded-md text-red-400 hover:text-red-300 hover:bg-red-500/10 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all duration-200 ${
             isDeleting ? "opacity-50 cursor-not-allowed" : ""
