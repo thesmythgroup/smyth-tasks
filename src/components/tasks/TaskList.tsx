@@ -36,6 +36,7 @@ export function TaskList() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
     new Set()
   );
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [isProcessingBulkAction, setIsProcessingBulkAction] = useState(false);
 
   const filteredAndSortedTasks = useMemo(() => {
@@ -79,10 +80,33 @@ export function TaskList() {
     });
   };
 
+  const handleTaskClick = (taskId: string, e: React.MouseEvent) => {
+    // Don't enter selection mode if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.tagName === "BUTTON" ||
+      target.tagName === "INPUT" ||
+      target.tagName === "SELECT" ||
+      target.closest("button") ||
+      target.closest("input") ||
+      target.closest("select")
+    ) {
+      return;
+    }
+
+    // Enter selection mode and toggle this task
+    if (!isSelectionMode) {
+      setIsSelectionMode(true);
+    }
+    handleTaskSelect(taskId);
+  };
+
   const handleSelectAll = () => {
     if (selectedTaskIds.size === filteredAndSortedTasks.length) {
       setSelectedTaskIds(new Set());
+      setIsSelectionMode(false);
     } else {
+      setIsSelectionMode(true);
       setSelectedTaskIds(
         new Set(filteredAndSortedTasks.map((task) => task.id))
       );
@@ -91,6 +115,7 @@ export function TaskList() {
 
   const handleClearSelection = () => {
     setSelectedTaskIds(new Set());
+    setIsSelectionMode(false);
   };
 
   const handleBulkComplete = async () => {
@@ -160,15 +185,18 @@ export function TaskList() {
     }
   };
 
-  const isSelectionMode = selectedTaskIds.size > 0;
-
   // Clear selection for tasks that no longer exist (e.g., deleted individually)
   useEffect(() => {
     const taskIdsSet = new Set(tasks.map((task) => task.id));
     setSelectedTaskIds((prev) => {
       const filtered = Array.from(prev).filter((id) => taskIdsSet.has(id));
       if (filtered.length !== prev.size) {
-        return new Set(filtered);
+        const newSet = new Set(filtered);
+        // Exit selection mode if no tasks are selected
+        if (newSet.size === 0) {
+          setIsSelectionMode(false);
+        }
+        return newSet;
       }
       return prev;
     });
@@ -228,17 +256,23 @@ export function TaskList() {
             </div>
             {filteredAndSortedTasks.length > 0 && (
               <div className="flex items-center gap-2">
-                <button
-                  onClick={handleSelectAll}
-                  className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                >
-                  {selectedTaskIds.size === filteredAndSortedTasks.length
-                    ? "Deselect All"
-                    : "Select All"}
-                </button>
-                {isSelectionMode && (
-                  <span className="text-sm text-gray-400">
-                    {selectedTaskIds.size} selected
+                {isSelectionMode ? (
+                  <>
+                    <button
+                      onClick={handleSelectAll}
+                      className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                    >
+                      {selectedTaskIds.size === filteredAndSortedTasks.length
+                        ? "Deselect All"
+                        : "Select All"}
+                    </button>
+                    <span className="text-sm text-gray-400">
+                      {selectedTaskIds.size} selected
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-sm text-gray-500 italic">
+                    Click on a task to select
                   </span>
                 )}
               </div>
@@ -390,6 +424,7 @@ export function TaskList() {
                   searchQuery={searchQuery}
                   isSelected={selectedTaskIds.has(task.id)}
                   onSelect={() => handleTaskSelect(task.id)}
+                  onTaskClick={(e) => handleTaskClick(task.id, e)}
                   isSelectionMode={isSelectionMode}
                 />
               </motion.div>
