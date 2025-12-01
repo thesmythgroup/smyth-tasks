@@ -8,6 +8,7 @@ import {
   toggleTask,
   updateTaskDueDate,
   updateTaskPriority,
+  setTaskOrder,
 } from "../features/tasksSlice";
 import { saveState, loadState } from "../utils/localStorage";
 
@@ -49,6 +50,32 @@ export const localApi = createApi({
             return task;
           }
         );
+
+        // Migrate tasks without order field: assign default order based on current sort
+        const tasksNeedingOrder = migratedTasks.filter((task) => task.order === undefined);
+        if (tasksNeedingOrder.length > 0) {
+          // Sort all tasks by current sort order (priority → dueDate → createdAt)
+          const sorted = [...migratedTasks].sort((a, b) => {
+            // First by priority
+            if (a.priority !== b.priority) {
+              return a.priority - b.priority;
+            }
+            // Then by due date
+            if (!a.dueDate && !b.dueDate) {
+              return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            }
+            if (!a.dueDate) return 1;
+            if (!b.dueDate) return -1;
+            return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+          });
+
+          // Assign order values based on sorted position
+          sorted.forEach((task, index) => {
+            if (task.order === undefined) {
+              task.order = index;
+            }
+          });
+        }
 
         dispatch(setTasks(migratedTasks));
         return { data: migratedTasks };
@@ -94,6 +121,11 @@ export const localApi = createApi({
         if ("priority" in update) {
           dispatch(
             updateTaskPriority({ id: update.id, priority: update.priority! })
+          );
+        }
+        if ("order" in update && update.order !== undefined) {
+          dispatch(
+            setTaskOrder({ taskId: update.id, order: update.order })
           );
         }
         const state = getState();
