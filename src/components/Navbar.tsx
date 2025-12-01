@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/types";
 import { logout } from "@/lib/features/userSlice";
 import { LoginModal } from "./auth/LoginModal";
+import { NotificationBell } from "./notifications/NotificationBell";
 import { AppDispatch } from "@/lib/store/store";
-import { loadState } from "@/lib/utils/localStorage";
 
 export function Navbar() {
   const dispatch = useDispatch<AppDispatch>();
@@ -31,6 +31,7 @@ export function Navbar() {
               <div className="flex items-center space-x-6">
                 {isAuthenticated && currentUser ? (
                   <>
+                    <NotificationBell />
                     <span className="text-gray-300 font-medium">
                       Welcome, {currentUser.name}
                     </span>

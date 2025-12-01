@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { RootState, PriorityLevel } from "@/lib/types";
-import { useGetTasksQuery } from "@/lib/services/localApi";
+import { useGetTasksQuery, useGetAllCommentsQuery } from "@/lib/services/localApi";
 import { TaskItem } from "./TaskItem";
 import { AddTaskForm } from "./AddTaskForm";
 import { TaskSearch } from "./TaskSearch";
@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export function TaskList() {
   const { data: tasks = [], isLoading, error } = useGetTasksQuery();
+  const { data: comments = [] } = useGetAllCommentsQuery();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
 
   const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>(
@@ -236,7 +237,7 @@ export function TaskList() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <TaskItem task={task} searchQuery={searchQuery} />
+                <TaskItem task={task} comments={comments} searchQuery={searchQuery} />
               </motion.div>
             ))
           )}
