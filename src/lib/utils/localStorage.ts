@@ -14,8 +14,10 @@ export const loadState = () => {
 
     // Ensure we have valid state structure
     return {
-      user: state.user || { currentUser: null, isAuthenticated: false },
+      user: state.user || { currentUser: null, allUsers: [], isAuthenticated: false },
       tasks: state.tasks || { items: [], loading: false, error: null },
+      comments: state.comments || { items: [], loading: false, error: null },
+      notifications: state.notifications || { items: [], loading: false, error: null },
     };
   } catch (err) {
     console.error("Error loading state:", err);
@@ -29,11 +31,21 @@ export const saveState = (state: any) => {
   }
 
   try {
-    // Only persist user and tasks data
+    // Persist user, tasks, comments, and notifications data
     const stateToPersist = {
       user: state.user,
       tasks: {
-        items: state.tasks.items,
+        items: state.tasks?.items || [],
+        loading: false,
+        error: null,
+      },
+      comments: {
+        items: state.comments?.items || [],
+        loading: false,
+        error: null,
+      },
+      notifications: {
+        items: state.notifications?.items || [],
         loading: false,
         error: null,
       },

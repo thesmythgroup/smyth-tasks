@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { RootState, PriorityLevel } from "@/lib/types";
-import { useGetTasksQuery } from "@/lib/services/localApi";
+import { useGetTasksQuery, useGetAllCommentsQuery } from "@/lib/services/localApi";
+// useGetAllCommentsQuery is still needed to load comments from localStorage on initial load
 import { TaskItem } from "./TaskItem";
 import { AddTaskForm } from "./AddTaskForm";
 import { TaskSearch } from "./TaskSearch";
@@ -19,6 +20,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export function TaskList() {
   const { data: tasks = [], isLoading, error } = useGetTasksQuery();
+  // Load comments from localStorage on initial render (data used via Redux state in components)
+  useGetAllCommentsQuery();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
 
   const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>(

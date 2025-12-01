@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Task, PriorityLevel } from "@/lib/types";
+import { useSelector } from "react-redux";
+import { Task, PriorityLevel, RootState } from "@/lib/types";
 import {
   useUpdateTaskMutation,
   useDeleteTaskMutation,
@@ -10,6 +11,8 @@ import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { formatDateForDisplay } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS, getPriorityStyles } from "@/lib/utils/priorityUtils";
 import { highlightText } from "@/lib/utils/searchUtils";
+import { TaskDescription } from "./TaskDescription";
+import { CommentSection } from "./CommentSection";
 import toast from "react-hot-toast";
 
 interface TaskItemProps {
@@ -24,6 +27,13 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editedDate, setEditedDate] = useState(task.dueDate || "");
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Get comments from Redux state for immediate updates
+  const allComments = useSelector(
+    (state: RootState) => state.comments?.items || []
+  );
+  const commentCount = allComments.filter((c) => c.taskId === task.id).length;
 
   const handleToggle = async () => {
     try {
@@ -62,7 +72,7 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
       }).unwrap();
       setIsEditingDate(false);
       toast.success("Due date updated successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to update due date");
     } finally {
       setIsUpdating(false);
@@ -80,9 +90,7 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
     const today = new Date();
     dueDate.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
-    const overdue = dueDate < today;
-    console.log("Date check:", { dateString, dueDate, today, overdue });
-    return overdue;
+    return dueDate < today;
   };
 
   const handlePriorityChange = async (newPriority: PriorityLevel) => {
@@ -130,7 +138,7 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
 
   return (
     <div
-      className={`group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${getPriorityStyles(
+      className={`group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 border-l-4 ${getPriorityStyles(
         task.priority
       )}`}
     >
@@ -152,7 +160,50 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
             )}
           </div>
           <div className="flex-1">
-            {renderTaskTitle()}
+            <div className="flex items-center gap-2">
+              {renderTaskTitle()}
+              {/* Expand/collapse button */}
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="ml-2 p-1 text-gray-500 hover:text-gray-300 transition-colors rounded"
+                title={isExpanded ? "Collapse" : "Expand"}
+              >
+                <svg
+                  className={`w-4 h-4 transition-transform ${
+                    isExpanded ? "rotate-180" : ""
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              {/* Comment count badge */}
+              {commentCount > 0 && (
+                <span className="text-xs text-gray-500 flex items-center gap-1">
+                  <svg
+                    className="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                    />
+                  </svg>
+                  {commentCount}
+                </span>
+              )}
+            </div>
             <div>
               {task.dueDate && !isEditingDate && (
                 <div className="mt-2 text-sm">
@@ -244,6 +295,14 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
           )}
         </button>
       </div>
+
+      {/* Expandable section for description and comments */}
+      {isExpanded && (
+        <div className="mt-4 pt-4 border-t border-gray-700">
+          <TaskDescription taskId={task.id} description={task.description} />
+          <CommentSection task={task} />
+        </div>
+      )}
     </div>
   );
 }
