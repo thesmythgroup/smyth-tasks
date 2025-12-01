@@ -41,6 +41,16 @@ export const tasksSlice = createSlice({
         task.updatedAt = new Date().toISOString();
       }
     },
+    updateTaskDescription: (
+      state,
+      action: PayloadAction<{ id: string; description: string | null }>
+    ) => {
+      const task = state.items.find((t) => t.id === action.payload.id);
+      if (task) {
+        task.description = action.payload.description;
+        task.updatedAt = new Date().toISOString();
+      }
+    },
     setTasks: (state, action: PayloadAction<Task[]>) => {
       state.items = action.payload;
     },
@@ -64,6 +74,7 @@ export const {
   updateTaskPriority,
   removeTask,
   updateTaskDueDate,
+  updateTaskDescription,
   setTasks,
   setLoading,
   setError,
