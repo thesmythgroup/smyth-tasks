@@ -15,8 +15,12 @@ import toast from "react-hot-toast";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 
-// Dynamically import MDEditor to avoid SSR issues
+// Dynamically import MDEditor and Markdown to avoid SSR issues
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
+const MarkdownPreview = dynamic(
+  () => import("@uiw/react-md-editor").then((mod) => mod.default.Markdown),
+  { ssr: false }
+);
 
 interface TaskItemProps {
   task: Task;
@@ -230,7 +234,7 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
           {isDescriptionExpanded ? (
             // Full markdown preview
             <div data-color-mode="dark" className="prose prose-invert prose-sm max-w-none">
-              <MDEditor.Markdown source={task.description} />
+              <MarkdownPreview source={task.description || ""} />
             </div>
           ) : (
             // Truncated preview
