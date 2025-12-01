@@ -1,5 +1,5 @@
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
-import { Task, User, PriorityLevel } from "../types";
+import { Task, User, PriorityLevel, TasksState } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import {
   addTask,
@@ -118,6 +118,65 @@ export const localApi = createApi({
       invalidatesTags: ["Task"],
     }),
 
+    bulkUpdateTasks: builder.mutation<
+      { success: boolean; updated: number },
+      {
+        taskIds: string[];
+        updates: Partial<Task>;
+      }
+    >({
+      queryFn: async ({ taskIds, updates }, { dispatch, getState }) => {
+        await delay(100);
+        let updatedCount = 0;
+
+        // Handle completed updates
+        if ("completed" in updates) {
+          const state = getState() as { tasks: TasksState };
+          taskIds.forEach((taskId) => {
+            const task = state.tasks.items.find((t) => t.id === taskId);
+            if (task && task.completed !== updates.completed) {
+              dispatch(toggleTask(taskId));
+              updatedCount++;
+            }
+          });
+        }
+
+        // Handle priority updates
+        if ("priority" in updates && updates.priority !== undefined) {
+          taskIds.forEach((taskId) => {
+            dispatch(
+              updateTaskPriority({
+                id: taskId,
+                priority: updates.priority as PriorityLevel,
+              })
+            );
+            updatedCount++;
+          });
+        }
+
+        const state = getState();
+        saveState(state);
+        return { data: { success: true, updated: updatedCount } };
+      },
+      invalidatesTags: ["Task"],
+    }),
+
+    bulkDeleteTasks: builder.mutation<
+      { success: boolean; deleted: number },
+      string[]
+    >({
+      queryFn: async (taskIds, { dispatch, getState }) => {
+        await delay(100);
+        taskIds.forEach((taskId) => {
+          dispatch(removeTask(taskId));
+        });
+        const state = getState();
+        saveState(state);
+        return { data: { success: true, deleted: taskIds.length } };
+      },
+      invalidatesTags: ["Task"],
+    }),
+
     // User endpoints
     getUser: builder.query<User | null, void>({
       queryFn: async () => {
@@ -147,6 +206,8 @@ export const {
   useAddTaskMutation,
   useUpdateTaskMutation,
   useDeleteTaskMutation,
+  useBulkUpdateTasksMutation,
+  useBulkDeleteTasksMutation,
   useGetUserQuery,
   useUpdateUserMutation,
 } = localApi;

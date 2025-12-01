@@ -1,14 +1,20 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { RootState, PriorityLevel } from "@/lib/types";
-import { useGetTasksQuery } from "@/lib/services/localApi";
+import { RootState, PriorityLevel, Task } from "@/lib/types";
+import {
+  useGetTasksQuery,
+  useBulkUpdateTasksMutation,
+  useBulkDeleteTasksMutation,
+} from "@/lib/services/localApi";
 import { TaskItem } from "./TaskItem";
 import { AddTaskForm } from "./AddTaskForm";
 import { TaskSearch } from "./TaskSearch";
+import { BulkActionsToolbar } from "./BulkActionsToolbar";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { ErrorMessage } from "../ui/ErrorMessage";
+import toast from "react-hot-toast";
 import {
   PRIORITY_LEVELS,
   getPriorityFilterStyles,
@@ -20,11 +26,18 @@ import { motion, AnimatePresence } from "framer-motion";
 export function TaskList() {
   const { data: tasks = [], isLoading, error } = useGetTasksQuery();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
+  const [bulkUpdateTasks] = useBulkUpdateTasksMutation();
+  const [bulkDeleteTasks] = useBulkDeleteTasksMutation();
 
   const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>(
     "all"
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [isProcessingBulkAction, setIsProcessingBulkAction] = useState(false);
 
   const filteredAndSortedTasks = useMemo(() => {
     let filteredTasks = [...tasks];
@@ -54,6 +67,140 @@ export function TaskList() {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     });
   }, [tasks, priorityFilter, searchQuery]);
+
+  const handleTaskSelect = (taskId: string) => {
+    setSelectedTaskIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleTaskClick = (taskId: string, e: React.MouseEvent) => {
+    // Don't enter selection mode if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.tagName === "BUTTON" ||
+      target.tagName === "INPUT" ||
+      target.tagName === "SELECT" ||
+      target.closest("button") ||
+      target.closest("input") ||
+      target.closest("select")
+    ) {
+      return;
+    }
+
+    // Enter selection mode and toggle this task
+    if (!isSelectionMode) {
+      setIsSelectionMode(true);
+    }
+    handleTaskSelect(taskId);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedTaskIds.size === filteredAndSortedTasks.length) {
+      setSelectedTaskIds(new Set());
+      setIsSelectionMode(false);
+    } else {
+      setIsSelectionMode(true);
+      setSelectedTaskIds(
+        new Set(filteredAndSortedTasks.map((task) => task.id))
+      );
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedTaskIds(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const handleBulkComplete = async () => {
+    if (selectedTaskIds.size === 0) return;
+
+    try {
+      setIsProcessingBulkAction(true);
+      const taskIdsArray = Array.from(selectedTaskIds);
+      await bulkUpdateTasks({
+        taskIds: taskIdsArray,
+        updates: { completed: true },
+      }).unwrap();
+      toast.success(
+        `Successfully completed ${taskIdsArray.length} task${
+          taskIdsArray.length !== 1 ? "s" : ""
+        }`
+      );
+      handleClearSelection();
+    } catch (error) {
+      toast.error("Failed to complete tasks. Please try again.");
+    } finally {
+      setIsProcessingBulkAction(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTaskIds.size === 0) return;
+
+    try {
+      setIsProcessingBulkAction(true);
+      const taskIdsArray = Array.from(selectedTaskIds);
+      await bulkDeleteTasks(taskIdsArray).unwrap();
+      toast.success(
+        `Successfully deleted ${taskIdsArray.length} task${
+          taskIdsArray.length !== 1 ? "s" : ""
+        }`
+      );
+      handleClearSelection();
+    } catch (error) {
+      toast.error("Failed to delete tasks. Please try again.");
+    } finally {
+      setIsProcessingBulkAction(false);
+    }
+  };
+
+  const handleBulkPriorityUpdate = async (priority: PriorityLevel) => {
+    if (selectedTaskIds.size === 0) return;
+
+    try {
+      setIsProcessingBulkAction(true);
+      const taskIdsArray = Array.from(selectedTaskIds);
+      await bulkUpdateTasks({
+        taskIds: taskIdsArray,
+        updates: { priority },
+      }).unwrap();
+      const priorityName = PRIORITY_LEVELS[priority].displayText;
+      toast.success(
+        `Successfully updated priority to ${priorityName} for ${taskIdsArray.length} task${
+          taskIdsArray.length !== 1 ? "s" : ""
+        }`
+      );
+      handleClearSelection();
+    } catch (error) {
+      toast.error("Failed to update priority. Please try again.");
+    } finally {
+      setIsProcessingBulkAction(false);
+    }
+  };
+
+  // Clear selection for tasks that no longer exist (e.g., deleted individually)
+  useEffect(() => {
+    const taskIdsSet = new Set(tasks.map((task) => task.id));
+    setSelectedTaskIds((prev) => {
+      const filtered = Array.from(prev).filter((id) => taskIdsSet.has(id));
+      if (filtered.length !== prev.size) {
+        const newSet = new Set(filtered);
+        // Exit selection mode if no tasks are selected
+        if (newSet.size === 0) {
+          setIsSelectionMode(false);
+        }
+        return newSet;
+      }
+      return prev;
+    });
+  }, [tasks]);
 
   if (!isAuthenticated) {
     return (
@@ -87,13 +234,49 @@ export function TaskList() {
     <div className="max-w-3xl mx-auto">
       <AddTaskForm />
 
+      {isSelectionMode && (
+        <BulkActionsToolbar
+          selectedCount={selectedTaskIds.size}
+          onComplete={handleBulkComplete}
+          onDelete={handleBulkDelete}
+          onPriorityUpdate={handleBulkPriorityUpdate}
+          onClearSelection={handleClearSelection}
+          isProcessing={isProcessingBulkAction}
+        />
+      )}
+
       {tasks.length > 0 && (
         <div className="mb-6 space-y-4">
-          <div className="w-full max-w-md">
-            <TaskSearch
-              onSearchChange={setSearchQuery}
-              placeholder="Search tasks..."
-            />
+          <div className="flex items-center justify-between gap-4">
+            <div className="w-full max-w-md">
+              <TaskSearch
+                onSearchChange={setSearchQuery}
+                placeholder="Search tasks..."
+              />
+            </div>
+            {filteredAndSortedTasks.length > 0 && (
+              <div className="flex items-center gap-2">
+                {isSelectionMode ? (
+                  <>
+                    <button
+                      onClick={handleSelectAll}
+                      className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                    >
+                      {selectedTaskIds.size === filteredAndSortedTasks.length
+                        ? "Deselect All"
+                        : "Select All"}
+                    </button>
+                    <span className="text-sm text-gray-400">
+                      {selectedTaskIds.size} selected
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-sm text-gray-500 italic">
+                    Click on a task to select
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
@@ -236,7 +419,14 @@ export function TaskList() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <TaskItem task={task} searchQuery={searchQuery} />
+                <TaskItem
+                  task={task}
+                  searchQuery={searchQuery}
+                  isSelected={selectedTaskIds.has(task.id)}
+                  onSelect={() => handleTaskSelect(task.id)}
+                  onTaskClick={(e) => handleTaskClick(task.id, e)}
+                  isSelectionMode={isSelectionMode}
+                />
               </motion.div>
             ))
           )}
