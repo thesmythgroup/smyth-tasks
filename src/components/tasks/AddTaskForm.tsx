@@ -1,20 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState, PriorityLevel } from "@/lib/types";
 import { useAddTaskMutation } from "@/lib/services/localApi";
-import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { PriorityLevel, RootState } from "@/lib/types";
 import { getTodayDateString } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS } from "@/lib/utils/priorityUtils";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
 
-export function AddTaskForm() {
+export interface AddTaskFormRef {
+  focusInput: () => void;
+}
+
+export const AddTaskForm = forwardRef<AddTaskFormRef>((props, ref) => {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState<string>(getTodayDateString());
   const [priority, setPriority] = useState<PriorityLevel>(1); // Default to Jalapeño
   const [addTask, { isLoading }] = useAddTaskMutation();
   const { currentUser } = useSelector((state: RootState) => state.user);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focusInput: () => {
+      inputRef.current?.focus();
+    },
+  }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +56,7 @@ export function AddTaskForm() {
       <div className="flex flex-col gap-4 shadow-lg rounded-lg bg-gray-800 p-4 border border-gray-700">
         <div className="flex gap-4">
           <input
+            ref={inputRef}
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -87,4 +99,6 @@ export function AddTaskForm() {
       </div>
     </form>
   );
-}
+});
+
+AddTaskForm.displayName = "AddTaskForm";
