@@ -25,6 +25,7 @@ import {
   useSensors,
   DragEndEvent,
   DragStartEvent,
+  DragOverlay,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -389,6 +390,23 @@ export function TaskList() {
             )}
           </AnimatePresence>
         </div>
+        <DragOverlay>
+          {activeId ? (
+            (() => {
+              const activeTask = tasks.find((t) => t.id === activeId);
+              if (!activeTask) return null;
+              return (
+                <div className="opacity-90 rotate-3 scale-105">
+                  <TaskItem
+                    task={activeTask}
+                    searchQuery={searchQuery}
+                    isDragEnabled={false}
+                  />
+                </div>
+              );
+            })()
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </div>
   );
