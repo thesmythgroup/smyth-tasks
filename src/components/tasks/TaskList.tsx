@@ -2,8 +2,13 @@
 
 import { useState, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { RootState, PriorityLevel } from "@/lib/types";
-import { useGetTasksQuery } from "@/lib/services/localApi";
+import { RootState, PriorityLevel, Task } from "@/lib/types";
+import {
+  useGetTasksQuery,
+  useUpdateTaskMutation,
+  useDeleteTaskMutation,
+} from "@/lib/services/localApi";
+import toast from "react-hot-toast";
 import { TaskItem } from "./TaskItem";
 import { AddTaskForm } from "./AddTaskForm";
 import { TaskSearch } from "./TaskSearch";
@@ -20,11 +25,193 @@ import { motion, AnimatePresence } from "framer-motion";
 export function TaskList() {
   const { data: tasks = [], isLoading, error } = useGetTasksQuery();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
+  const [updateTask] = useUpdateTaskMutation();
+  const [deleteTask] = useDeleteTaskMutation();
 
   const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>(
     "all"
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [isMultiselectMode, setIsMultiselectMode] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [selectedDate, setSelectedDate] = useState("");
+
+  const enterMultiselectMode = () => {
+    setIsMultiselectMode(true);
+    setSelectedTaskIds(new Set());
+  };
+
+  const exitMultiselectMode = () => {
+    setIsMultiselectMode(false);
+    setSelectedTaskIds(new Set());
+    setSelectedDate("");
+  };
+
+  const toggleTaskSelection = (taskId: string) => {
+    setSelectedTaskIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
+  const getTasksRequiringUpdates = (
+    selectedIds: string[],
+    shouldUpdate: (task: Task) => boolean
+  ): string[] => {
+    return selectedIds.filter((id) => {
+      const task = tasks.find((t) => t.id === id);
+      return task && shouldUpdate(task);
+    });
+  };
+
+  const handleBatchPriorityChange = async (newPriority: PriorityLevel) => {
+    const selectedIds = Array.from(selectedTaskIds);
+    if (selectedIds.length === 0) return;
+
+    const tasksToUpdate = getTasksRequiringUpdates(
+      selectedIds,
+      (task) => task.priority !== newPriority
+    );
+
+    if (tasksToUpdate.length === 0) {
+      toast("No tasks needed priority updates", { icon: "ℹ️" });
+      exitMultiselectMode();
+      return;
+    }
+
+    try {
+      await Promise.all(
+        tasksToUpdate.map((id) =>
+          updateTask({ id, priority: newPriority }).unwrap()
+        )
+      );
+      toast.success(
+        `Priority updated for ${tasksToUpdate.length} task${tasksToUpdate.length > 1 ? "s" : ""}`
+      );
+      exitMultiselectMode();
+    } catch {
+      toast.error("Failed to update priority for some tasks");
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    const selectedIds = Array.from(selectedTaskIds);
+    if (selectedIds.length === 0) return;
+
+    try {
+      await Promise.all(
+        selectedIds.map((id) => deleteTask(id).unwrap())
+      );
+      toast.success(
+        `${selectedIds.length} task${selectedIds.length > 1 ? "s" : ""} deleted successfully`
+      );
+      exitMultiselectMode();
+    } catch {
+      toast.error("Failed to delete some tasks");
+    }
+  };
+
+  const handleBatchMarkAsDone = async () => {
+    const selectedIds = Array.from(selectedTaskIds);
+    if (selectedIds.length === 0) return;
+
+    const tasksToUpdate = getTasksRequiringUpdates(
+      selectedIds,
+      (task) => !task.completed
+    );
+
+    if (tasksToUpdate.length === 0) {
+      toast("All selected tasks are already marked as done", { icon: "ℹ️" });
+      exitMultiselectMode();
+      return;
+    }
+
+    try {
+      await Promise.all(
+        tasksToUpdate.map((id) =>
+          updateTask({ id, completed: true }).unwrap()
+        )
+      );
+      toast.success(
+        `${tasksToUpdate.length} task${tasksToUpdate.length > 1 ? "s" : ""} marked as done`
+      );
+      exitMultiselectMode();
+    } catch {
+      toast.error("Failed to mark some tasks as done");
+    }
+  };
+
+  const handleBatchSetDueDate = async () => {
+    const selectedIds = Array.from(selectedTaskIds);
+    if (selectedIds.length === 0 || !selectedDate) return;
+
+    const tasksToUpdate = getTasksRequiringUpdates(
+      selectedIds,
+      (task) => task.dueDate !== selectedDate
+    );
+
+    if (tasksToUpdate.length === 0) {
+      toast("All selected tasks already have this due date", { icon: "ℹ️" });
+      setSelectedDate("");
+      exitMultiselectMode();
+      return;
+    }
+
+    try {
+      await Promise.all(
+        tasksToUpdate.map((id) =>
+          updateTask({ id, dueDate: selectedDate }).unwrap()
+        )
+      );
+      toast.success(
+        `Due date set for ${tasksToUpdate.length} task${tasksToUpdate.length > 1 ? "s" : ""}`
+      );
+      setSelectedDate("");
+      exitMultiselectMode();
+    } catch {
+      toast.error("Failed to set due date for some tasks");
+    }
+  };
+
+  const handleClearDueDate = async () => {
+    const selectedIds = Array.from(selectedTaskIds);
+    if (selectedIds.length === 0) return;
+
+    const tasksToUpdate = getTasksRequiringUpdates(
+      selectedIds,
+      (task) => task.dueDate !== null
+    );
+
+    if (tasksToUpdate.length === 0) {
+      toast("All selected tasks already have no due date", { icon: "ℹ️" });
+      exitMultiselectMode();
+      return;
+    }
+
+    try {
+      await Promise.all(
+        tasksToUpdate.map((id) =>
+          updateTask({ id, dueDate: null }).unwrap()
+        )
+      );
+      toast.success(
+        `Due date cleared for ${tasksToUpdate.length} task${tasksToUpdate.length > 1 ? "s" : ""}`
+      );
+      exitMultiselectMode();
+    } catch {
+      toast.error("Failed to clear due date for some tasks");
+    }
+  };
+
+  // Get today's date in YYYY-MM-DD format for min attribute
+  const today = new Date().toISOString().split("T")[0];
 
   const filteredAndSortedTasks = useMemo(() => {
     let filteredTasks = [...tasks];
@@ -89,19 +276,33 @@ export function TaskList() {
 
       {tasks.length > 0 && (
         <div className="mb-6 space-y-4">
-          <div className="w-full max-w-md">
-            <TaskSearch
-              onSearchChange={setSearchQuery}
-              placeholder="Search tasks..."
-            />
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="w-full max-w-md">
+              <TaskSearch
+                onSearchChange={setSearchQuery}
+                placeholder="Search tasks..."
+              />
+            </div>
+            {!isMultiselectMode ? (
+              <button
+                onClick={enterMultiselectMode}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
+                Select Multiple
+              </button>
+            ) : (
+              <button
+                onClick={exitMultiselectMode}
+                className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            )}
           </div>
 
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
             <div className="flex flex-wrap gap-6">
               <div className="flex flex-col gap-2">
-                <span className="text-sm text-gray-400 font-medium">
-                  Priority:
-                </span>
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setPriorityFilter("all")}
@@ -205,6 +406,84 @@ export function TaskList() {
         </div>
       )}
 
+      {isMultiselectMode && (
+        <div className="sticky top-0 z-10 bg-gray-800 border border-gray-700 rounded-lg p-4 mb-4 shadow-lg">
+          <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+            <div className="text-gray-300 font-medium">
+              {selectedTaskIds.size > 0
+                ? `${selectedTaskIds.size} task${selectedTaskIds.size > 1 ? "s" : ""} selected`
+                : "No tasks selected"}
+            </div>
+          </div>
+          <div className="space-y-3">
+            {/* Row 1: Mark as Done and Delete */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleBatchMarkAsDone}
+                disabled={selectedTaskIds.size === 0}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Mark as Done
+              </button>
+              <button
+                onClick={handleBatchDelete}
+                disabled={selectedTaskIds.size === 0}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Delete Selected
+              </button>
+            </div>
+            {/* Row 2: Priority */}
+            <div className="flex items-center gap-3">
+              <select
+                onChange={(e) =>
+                  handleBatchPriorityChange(
+                    Number(e.target.value) as PriorityLevel
+                  )
+                }
+                disabled={selectedTaskIds.size === 0}
+                className="text-sm bg-gray-700 border border-gray-600 text-gray-300 rounded px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  Change priority...
+                </option>
+                {Object.values(PRIORITY_LEVELS).map((level) => (
+                  <option key={level.id} value={level.id}>
+                    {level.displayText}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Row 3: Due Date Picker, Set Date, Clear Due Date */}
+            <div className="flex items-center gap-3">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                min={today}
+                disabled={selectedTaskIds.size === 0}
+                className="text-sm bg-gray-700 border border-gray-600 text-gray-300 rounded px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <button
+                onClick={handleBatchSetDueDate}
+                disabled={!selectedDate || selectedTaskIds.size === 0}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Set Date
+              </button>
+              <button
+                onClick={handleClearDueDate}
+                disabled={selectedTaskIds.size === 0}
+                className="px-4 py-2 bg-gray-700 text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Clear Due Date
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <AnimatePresence>
           {filteredAndSortedTasks.length === 0 ? (
@@ -236,7 +515,13 @@ export function TaskList() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <TaskItem task={task} searchQuery={searchQuery} />
+                <TaskItem
+                  task={task}
+                  searchQuery={searchQuery}
+                  isMultiselectMode={isMultiselectMode}
+                  isSelected={selectedTaskIds.has(task.id)}
+                  onToggleSelection={() => toggleTaskSelection(task.id)}
+                />
               </motion.div>
             ))
           )}
