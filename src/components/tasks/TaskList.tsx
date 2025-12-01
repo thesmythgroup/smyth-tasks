@@ -1,26 +1,33 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useSelector } from "react-redux";
-import { RootState, PriorityLevel } from "@/lib/types";
-import { useGetTasksQuery } from "@/lib/services/localApi";
-import { TaskItem } from "./TaskItem";
-import { AddTaskForm } from "./AddTaskForm";
-import { TaskSearch } from "./TaskSearch";
-import { LoadingSpinner } from "../ui/LoadingSpinner";
-import { ErrorMessage } from "../ui/ErrorMessage";
+import { useKeyboardShortcuts } from "@/lib/hooks/useKeyboardShortcuts";
+import {
+  useDeleteTaskMutation,
+  useGetTasksQuery,
+  useUpdateTaskMutation,
+} from "@/lib/services/localApi";
+import { PriorityLevel, RootState } from "@/lib/types";
 import {
   PRIORITY_LEVELS,
-  getPriorityFilterStyles,
   getPriorityFilterInlineStyles,
+  getPriorityFilterStyles,
 } from "@/lib/utils/priorityUtils";
 import { searchTasks } from "@/lib/utils/searchUtils";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { ErrorMessage } from "../ui/ErrorMessage";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { AddTaskForm, AddTaskFormRef } from "./AddTaskForm";
+import { TaskItem } from "./TaskItem";
+import { TaskSearch } from "./TaskSearch";
 
 export function TaskList() {
   const { data: tasks = [], isLoading, error } = useGetTasksQuery();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
-
+  const addTaskFormRef = useRef<AddTaskFormRef>(null);
+  const [updateTask] = useUpdateTaskMutation();
+  const [deleteTask] = useDeleteTaskMutation();
   const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>(
     "all"
   );
@@ -28,7 +35,6 @@ export function TaskList() {
 
   const filteredAndSortedTasks = useMemo(() => {
     let filteredTasks = [...tasks];
-
     if (priorityFilter !== "all") {
       filteredTasks = tasks.filter((task) => task.priority === priorityFilter);
     }
@@ -43,7 +49,6 @@ export function TaskList() {
       if (a.priority !== b.priority) {
         return a.priority - b.priority;
       }
-
       if (!a.dueDate && !b.dueDate) {
         return (
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -54,6 +59,37 @@ export function TaskList() {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     });
   }, [tasks, priorityFilter, searchQuery]);
+
+  const { selectedIndex, handleKeyDown } = useKeyboardShortcuts({
+    taskCount: filteredAndSortedTasks.length,
+    onAddTask: () => {
+      addTaskFormRef.current?.focusInput();
+    },
+    onToggleTask: (index: number) => {
+      const task = filteredAndSortedTasks[index];
+      if (task) {
+        updateTask({
+          id: task.id,
+          completed: !task.completed,
+        });
+      }
+    },
+    onDeleteTask: (index: number) => {
+      const task = filteredAndSortedTasks[index];
+      if (task) {
+        deleteTask(task.id);
+      }
+    },
+    enabled: isAuthenticated && !isLoading,
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated || isLoading) return;
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAuthenticated, isLoading, handleKeyDown]);
 
   if (!isAuthenticated) {
     return (
@@ -85,8 +121,7 @@ export function TaskList() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <AddTaskForm />
-
+      <AddTaskForm ref={addTaskFormRef} />
       {tasks.length > 0 && (
         <div className="mb-6 space-y-4">
           <div className="w-full max-w-md">
@@ -95,7 +130,6 @@ export function TaskList() {
               placeholder="Search tasks..."
             />
           </div>
-
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
             <div className="flex flex-wrap gap-6">
               <div className="flex flex-col gap-2">
@@ -137,7 +171,6 @@ export function TaskList() {
                   ))}
                 </div>
               </div>
-
               <div className="flex flex-col gap-2">
                 <span className="text-sm text-gray-400 font-medium">Tags:</span>
                 <div className="flex gap-2">
@@ -228,7 +261,7 @@ export function TaskList() {
               </p>
             </motion.div>
           ) : (
-            filteredAndSortedTasks.map((task) => (
+            filteredAndSortedTasks.map((task, index) => (
               <motion.div
                 key={task.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -236,7 +269,11 @@ export function TaskList() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <TaskItem task={task} searchQuery={searchQuery} />
+                <TaskItem
+                  task={task}
+                  searchQuery={searchQuery}
+                  isSelected={selectedIndex === index}
+                />
               </motion.div>
             ))
           )}

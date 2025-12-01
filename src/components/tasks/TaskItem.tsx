@@ -1,23 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { Task, PriorityLevel } from "@/lib/types";
 import {
-  useUpdateTaskMutation,
   useDeleteTaskMutation,
+  useUpdateTaskMutation,
 } from "@/lib/services/localApi";
-import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { PriorityLevel, Task } from "@/lib/types";
 import { formatDateForDisplay } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS, getPriorityStyles } from "@/lib/utils/priorityUtils";
 import { highlightText } from "@/lib/utils/searchUtils";
+import { useState } from "react";
 import toast from "react-hot-toast";
-
+import { LoadingSpinner } from "../ui/LoadingSpinner";
 interface TaskItemProps {
   task: Task;
   searchQuery?: string;
+  isSelected?: boolean;
 }
 
-export function TaskItem({ task, searchQuery }: TaskItemProps) {
+export function TaskItem({ task, searchQuery, isSelected = false }: TaskItemProps) {
   const [updateTask] = useUpdateTaskMutation();
   const [deleteTask] = useDeleteTaskMutation();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -130,7 +130,11 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
 
   return (
     <div
-      className={`group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${getPriorityStyles(
+      className={`group p-5 bg-gray-800 rounded-lg border-2 ${
+        isSelected
+          ? "border-blue-500 ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-800"
+          : "border-gray-700 hover:border-gray-600"
+      } shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${getPriorityStyles(
         task.priority
       )}`}
     >
