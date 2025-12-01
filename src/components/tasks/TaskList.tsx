@@ -134,20 +134,7 @@ export function TaskList() {
     // Reorder tasks
     const reordered = arrayMove(sortedTasks, oldIndex, newIndex);
 
-    // Always update the dragged task's priority to match the target task's priority
-    // This ensures the task takes on the priority of where it's dropped
-    const newPriority = overTask.priority;
-
-    // Update priority and order for the active task
-    dispatch(
-      moveTaskToPriority({
-        taskId: active.id as string,
-        newPriority: newPriority,
-        newOrder: newIndex,
-      })
-    );
-
-    // Update order for all tasks (including the active one)
+    // Update order for all tasks (priority remains unchanged)
     const orderUpdates = reordered.map((task, index) => ({
       taskId: task.id,
       order: index,
@@ -155,19 +142,12 @@ export function TaskList() {
 
     dispatch(reorderMultipleTasks(orderUpdates));
 
-    // Persist all updates
-    await Promise.all([
-      // Update the active task with new priority and order
-      updateTask({
-        id: active.id as string,
-        priority: newPriority,
-        order: newIndex,
-      }).unwrap(),
-      // Update order for all tasks
-      ...orderUpdates.map(({ taskId, order }) =>
+    // Persist order updates (priority is not changed)
+    await Promise.all(
+      orderUpdates.map(({ taskId, order }) =>
         updateTask({ id: taskId, order }).unwrap()
-      ),
-    ]);
+      )
+    );
   };
 
   const handleToggleCustomOrder = () => {
