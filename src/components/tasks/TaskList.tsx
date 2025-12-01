@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState, PriorityLevel, Task } from "@/lib/types";
 import {
@@ -161,6 +161,18 @@ export function TaskList() {
   };
 
   const isSelectionMode = selectedTaskIds.size > 0;
+
+  // Clear selection for tasks that no longer exist (e.g., deleted individually)
+  useEffect(() => {
+    const taskIdsSet = new Set(tasks.map((task) => task.id));
+    setSelectedTaskIds((prev) => {
+      const filtered = Array.from(prev).filter((id) => taskIdsSet.has(id));
+      if (filtered.length !== prev.size) {
+        return new Set(filtered);
+      }
+      return prev;
+    });
+  }, [tasks]);
 
   if (!isAuthenticated) {
     return (
