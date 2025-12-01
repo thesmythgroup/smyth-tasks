@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSelector } from "react-redux";
-import { Comment, RootState, Task } from "@/lib/types";
+import { RootState, Task } from "@/lib/types";
 import {
   useAddCommentMutation,
   useAddNotificationMutationMutation,
@@ -19,10 +19,9 @@ import toast from "react-hot-toast";
 
 interface CommentSectionProps {
   task: Task;
-  comments: Comment[];
 }
 
-export function CommentSection({ task, comments }: CommentSectionProps) {
+export function CommentSection({ task }: CommentSectionProps) {
   const [addComment] = useAddCommentMutation();
   const [addNotification] = useAddNotificationMutationMutation();
   const [newComment, setNewComment] = useState("");
@@ -32,10 +31,15 @@ export function CommentSection({ task, comments }: CommentSectionProps) {
     (state: RootState) => state.user
   );
 
+  // Get comments directly from Redux state for immediate updates
+  const allComments = useSelector(
+    (state: RootState) => state.comments?.items || []
+  );
+
   // Ensure allUsers is an array (handle legacy localStorage)
   const users = allUsers || [];
 
-  const taskComments = comments
+  const taskComments = allComments
     .filter((c) => c.taskId === task.id)
     .sort(
       (a, b) =>

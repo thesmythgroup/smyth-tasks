@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Task, Comment, PriorityLevel } from "@/lib/types";
+import { useSelector } from "react-redux";
+import { Task, PriorityLevel, RootState } from "@/lib/types";
 import {
   useUpdateTaskMutation,
   useDeleteTaskMutation,
@@ -16,11 +17,10 @@ import toast from "react-hot-toast";
 
 interface TaskItemProps {
   task: Task;
-  comments: Comment[];
   searchQuery?: string;
 }
 
-export function TaskItem({ task, comments, searchQuery }: TaskItemProps) {
+export function TaskItem({ task, searchQuery }: TaskItemProps) {
   const [updateTask] = useUpdateTaskMutation();
   const [deleteTask] = useDeleteTaskMutation();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -29,8 +29,11 @@ export function TaskItem({ task, comments, searchQuery }: TaskItemProps) {
   const [editedDate, setEditedDate] = useState(task.dueDate || "");
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const taskComments = comments.filter((c) => c.taskId === task.id);
-  const commentCount = taskComments.length;
+  // Get comments from Redux state for immediate updates
+  const allComments = useSelector(
+    (state: RootState) => state.comments?.items || []
+  );
+  const commentCount = allComments.filter((c) => c.taskId === task.id).length;
 
   const handleToggle = async () => {
     try {
@@ -297,7 +300,7 @@ export function TaskItem({ task, comments, searchQuery }: TaskItemProps) {
       {isExpanded && (
         <div className="mt-4 pt-4 border-t border-gray-700">
           <TaskDescription taskId={task.id} description={task.description} />
-          <CommentSection task={task} comments={comments} />
+          <CommentSection task={task} />
         </div>
       )}
     </div>
