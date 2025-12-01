@@ -11,19 +11,40 @@ import { formatDateForDisplay } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS, getPriorityStyles } from "@/lib/utils/priorityUtils";
 import { highlightText } from "@/lib/utils/searchUtils";
 import toast from "react-hot-toast";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface TaskItemProps {
   task: Task;
   searchQuery?: string;
+  isDragEnabled?: boolean;
 }
 
-export function TaskItem({ task, searchQuery }: TaskItemProps) {
+export function TaskItem({ task, searchQuery, isDragEnabled = false }: TaskItemProps) {
   const [updateTask] = useUpdateTaskMutation();
   const [deleteTask] = useDeleteTaskMutation();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editedDate, setEditedDate] = useState(task.dueDate || "");
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: task.id,
+    disabled: !isDragEnabled,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const handleToggle = async () => {
     try {
@@ -130,12 +151,39 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
 
   return (
     <div
-      className={`group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${getPriorityStyles(
-        task.priority
-      )}`}
+      ref={setNodeRef}
+      style={style}
+      className={`group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${
+        isDragging
+          ? "shadow-2xl scale-105 border-blue-500 ring-2 ring-blue-500 ring-opacity-50"
+          : ""
+      } ${getPriorityStyles(task.priority)}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4 flex-1">
+          {isDragEnabled && (
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-300 transition-colors"
+              title="Drag to reorder"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+                className="opacity-60"
+              >
+                <circle cx="4" cy="4" r="1.5" />
+                <circle cx="12" cy="4" r="1.5" />
+                <circle cx="4" cy="8" r="1.5" />
+                <circle cx="12" cy="8" r="1.5" />
+                <circle cx="4" cy="12" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+              </svg>
+            </div>
+          )}
           <div className="relative">
             {isUpdating ? (
               <div className="h-6 w-6 flex items-center justify-center">
