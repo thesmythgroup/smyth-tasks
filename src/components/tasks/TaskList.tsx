@@ -35,7 +35,7 @@ export function TaskList() {
 
     if (searchQuery.trim()) {
       filteredTasks = searchTasks(filteredTasks, searchQuery, {
-        fields: ["title"],
+        fields: ["title", "description"],
       });
     }
 
