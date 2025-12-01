@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useSelector } from "react-redux";
-import { RootState, PriorityLevel } from "@/lib/types";
-import { useGetTasksQuery } from "@/lib/services/localApi";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState, PriorityLevel, Task } from "@/lib/types";
+import { useGetTasksQuery, useUpdateTaskMutation } from "@/lib/services/localApi";
 import { TaskItem } from "./TaskItem";
 import { AddTaskForm } from "./AddTaskForm";
 import { TaskSearch } from "./TaskSearch";
@@ -16,15 +16,43 @@ import {
 } from "@/lib/utils/priorityUtils";
 import { searchTasks } from "@/lib/utils/searchUtils";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { reorderTasks, moveTaskToPriority, clearTaskOrder, reorderMultipleTasks } from "@/lib/features/tasksSlice";
 
 export function TaskList() {
   const { data: tasks = [], isLoading, error } = useGetTasksQuery();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
+  const dispatch = useDispatch();
+  const [updateTask] = useUpdateTaskMutation();
 
   const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>(
     "all"
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [useCustomOrder, setUseCustomOrder] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const filteredAndSortedTasks = useMemo(() => {
     let filteredTasks = [...tasks];
@@ -39,21 +67,112 @@ export function TaskList() {
       });
     }
 
-    return filteredTasks.sort((a, b) => {
-      if (a.priority !== b.priority) {
-        return a.priority - b.priority;
-      }
+    if (useCustomOrder) {
+      // Sort by global order field (allowing items to be positioned above/below items of different priorities)
+      return filteredTasks.sort((a, b) => {
+        const aOrder = a.order ?? Infinity;
+        const bOrder = b.order ?? Infinity;
+        if (aOrder !== bOrder) {
+          return aOrder - bOrder;
+        }
+        // Fallback to createdAt if no order
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
+    } else {
+      // Auto sort: priority → due date → created date
+      return filteredTasks.sort((a, b) => {
+        if (a.priority !== b.priority) {
+          return a.priority - b.priority;
+        }
 
-      if (!a.dueDate && !b.dueDate) {
-        return (
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        );
-      }
-      if (!a.dueDate) return 1;
-      if (!b.dueDate) return -1;
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        if (!a.dueDate && !b.dueDate) {
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        }
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      });
+    }
+  }, [tasks, priorityFilter, searchQuery, useCustomOrder]);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const activeTask = tasks.find((t) => t.id === active.id);
+    if (!activeTask) return;
+
+    const overTask = tasks.find((t) => t.id === over.id);
+    if (!overTask) return;
+
+    // Get all tasks sorted by current order
+    const sortedTasks = [...tasks].sort((a, b) => {
+      const aOrder = a.order ?? Infinity;
+      const bOrder = b.order ?? Infinity;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     });
-  }, [tasks, priorityFilter, searchQuery]);
+
+    const oldIndex = sortedTasks.findIndex((t) => t.id === active.id);
+    const newIndex = sortedTasks.findIndex((t) => t.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+      return;
+    }
+
+    // Reorder tasks
+    const reordered = arrayMove(sortedTasks, oldIndex, newIndex);
+
+    // Update priorities if dragging across priority boundaries
+    if (activeTask.priority !== overTask.priority) {
+      // Update the dragged task's priority to match the target
+      dispatch(
+        moveTaskToPriority({
+          taskId: active.id as string,
+          newPriority: overTask.priority,
+          newOrder: newIndex,
+        })
+      );
+      await updateTask({
+        id: active.id as string,
+        priority: overTask.priority,
+        order: newIndex,
+      }).unwrap();
+    }
+
+    // Update order for all tasks
+    const orderUpdates = reordered.map((task, index) => ({
+      taskId: task.id,
+      order: index,
+    }));
+
+    dispatch(reorderMultipleTasks(orderUpdates));
+
+    // Persist updates
+    await Promise.all(
+      orderUpdates.map(({ taskId, order }) =>
+        updateTask({ id: taskId, order }).unwrap()
+      )
+    );
+  };
+
+  const handleToggleCustomOrder = () => {
+    if (useCustomOrder) {
+      // Switching to auto sort - clear custom order
+      dispatch(clearTaskOrder());
+    }
+    setUseCustomOrder(!useCustomOrder);
+  };
 
   if (!isAuthenticated) {
     return (
@@ -89,11 +208,24 @@ export function TaskList() {
 
       {tasks.length > 0 && (
         <div className="mb-6 space-y-4">
-          <div className="w-full max-w-md">
-            <TaskSearch
-              onSearchChange={setSearchQuery}
-              placeholder="Search tasks..."
-            />
+          <div className="flex items-center justify-between gap-4">
+            <div className="w-full max-w-md">
+              <TaskSearch
+                onSearchChange={setSearchQuery}
+                placeholder="Search tasks..."
+              />
+            </div>
+            <button
+              onClick={handleToggleCustomOrder}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                useCustomOrder
+                  ? "bg-green-600 text-white hover:bg-green-700"
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+              }`}
+              title={useCustomOrder ? "Switch to Auto Sort" : "Enable Custom Order"}
+            >
+              {useCustomOrder ? "Custom Order" : "Auto Sort"}
+            </button>
           </div>
 
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
@@ -205,43 +337,59 @@ export function TaskList() {
         </div>
       )}
 
-      <div className="space-y-4">
-        <AnimatePresence>
-          {filteredAndSortedTasks.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="text-center py-12 px-4 bg-gray-800/50 rounded-lg border-2 border-dashed border-gray-700"
-            >
-              <p className="text-xl text-gray-400 mb-2">
-                {tasks.length === 0
-                  ? "No tasks yet"
-                  : "No tasks match the current filter"}
-              </p>
-              <p className="text-gray-500">
-                {tasks.length === 0
-                  ? "Add your first task using the form above!"
-                  : searchQuery.trim()
-                  ? "Try adjusting your search or priority filter."
-                  : "Try changing the priority filter above."}
-              </p>
-            </motion.div>
-          ) : (
-            filteredAndSortedTasks.map((task) => (
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="space-y-4">
+          <AnimatePresence>
+            {filteredAndSortedTasks.length === 0 ? (
               <motion.div
-                key={task.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.2 }}
+                exit={{ opacity: 0 }}
+                className="text-center py-12 px-4 bg-gray-800/50 rounded-lg border-2 border-dashed border-gray-700"
               >
-                <TaskItem task={task} searchQuery={searchQuery} />
+                <p className="text-xl text-gray-400 mb-2">
+                  {tasks.length === 0
+                    ? "No tasks yet"
+                    : "No tasks match the current filter"}
+                </p>
+                <p className="text-gray-500">
+                  {tasks.length === 0
+                    ? "Add your first task using the form above!"
+                    : searchQuery.trim()
+                    ? "Try adjusting your search or priority filter."
+                    : "Try changing the priority filter above."}
+                </p>
               </motion.div>
-            ))
-          )}
-        </AnimatePresence>
-      </div>
+            ) : (
+              <SortableContext
+                items={filteredAndSortedTasks.map((t) => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {filteredAndSortedTasks.map((task) => (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <TaskItem
+                      task={task}
+                      searchQuery={searchQuery}
+                      isDragEnabled={useCustomOrder}
+                    />
+                  </motion.div>
+                ))}
+              </SortableContext>
+            )}
+          </AnimatePresence>
+        </div>
+      </DndContext>
     </div>
   );
 }
