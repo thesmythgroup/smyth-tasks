@@ -1,21 +1,21 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useSelector } from "react-redux";
-import { RootState, PriorityLevel } from "@/lib/types";
 import { useGetTasksQuery } from "@/lib/services/localApi";
-import { TaskItem } from "./TaskItem";
-import { AddTaskForm } from "./AddTaskForm";
-import { TaskSearch } from "./TaskSearch";
-import { LoadingSpinner } from "../ui/LoadingSpinner";
-import { ErrorMessage } from "../ui/ErrorMessage";
+import { PriorityLevel, RootState } from "@/lib/types";
 import {
   PRIORITY_LEVELS,
-  getPriorityFilterStyles,
   getPriorityFilterInlineStyles,
+  getPriorityFilterStyles,
 } from "@/lib/utils/priorityUtils";
 import { searchTasks } from "@/lib/utils/searchUtils";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
+import { ErrorMessage } from "../ui/ErrorMessage";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { AddTaskForm } from "./AddTaskForm";
+import { TaskItem } from "./TaskItem";
+import { TaskSearch } from "./TaskSearch";
 
 export function TaskList() {
   const { data: tasks = [], isLoading, error } = useGetTasksQuery();
@@ -25,6 +25,9 @@ export function TaskList() {
     "all"
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
+    new Set()
+  );
 
   const filteredAndSortedTasks = useMemo(() => {
     let filteredTasks = [...tasks];
@@ -54,6 +57,41 @@ export function TaskList() {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     });
   }, [tasks, priorityFilter, searchQuery]);
+
+  // Clean up selection when tasks become hidden by filters
+  useEffect(() => {
+    const visibleTaskIds = new Set(filteredAndSortedTasks.map((t) => t.id));
+    setSelectedTaskIds((prev) => {
+      const cleaned = new Set<string>();
+      prev.forEach((id) => {
+        if (visibleTaskIds.has(id)) {
+          cleaned.add(id);
+        }
+      });
+      return cleaned;
+    });
+  }, [filteredAndSortedTasks]);
+
+  const handleTaskSelection = useCallback((taskId: string, isSelected: boolean) => {
+    setSelectedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (isSelected) {
+        next.add(taskId);
+      } else {
+        next.delete(taskId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    const allFilteredIds = new Set(filteredAndSortedTasks.map((t) => t.id));
+    setSelectedTaskIds(allFilteredIds);
+  }, [filteredAndSortedTasks]);
+
+  const handleDeselectAll = useCallback(() => {
+    setSelectedTaskIds(new Set());
+  }, []);
 
   if (!isAuthenticated) {
     return (
@@ -200,6 +238,44 @@ export function TaskList() {
                   </span>
                 </div>
               </div>
+
+              <div className="flex flex-col gap-2">
+                <span className="text-sm text-gray-400 font-medium">
+                  Selection:
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSelectAll}
+                    className="px-4 py-2 rounded-md text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600 transition-colors"
+                    style={{
+                      paddingLeft: "1rem",
+                      paddingRight: "1rem",
+                      paddingTop: "0.5rem",
+                      paddingBottom: "0.5rem",
+                      borderRadius: "0.375rem",
+                      fontSize: "0.75rem",
+                      fontWeight: "500",
+                    }}
+                  >
+                    Select All
+                  </button>
+                  <button
+                    onClick={handleDeselectAll}
+                    className="px-4 py-2 rounded-md text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600 transition-colors"
+                    style={{
+                      paddingLeft: "1rem",
+                      paddingRight: "1rem",
+                      paddingTop: "0.5rem",
+                      paddingBottom: "0.5rem",
+                      borderRadius: "0.375rem",
+                      fontSize: "0.75rem",
+                      fontWeight: "500",
+                    }}
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -236,7 +312,12 @@ export function TaskList() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <TaskItem task={task} searchQuery={searchQuery} />
+                <TaskItem
+                  task={task}
+                  searchQuery={searchQuery}
+                  isSelected={selectedTaskIds.has(task.id)}
+                  onSelectionChange={handleTaskSelection}
+                />
               </motion.div>
             ))
           )}

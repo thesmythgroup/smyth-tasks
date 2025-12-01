@@ -1,23 +1,30 @@
 "use client";
 
-import { useState } from "react";
-import { Task, PriorityLevel } from "@/lib/types";
 import {
-  useUpdateTaskMutation,
   useDeleteTaskMutation,
+  useUpdateTaskMutation,
 } from "@/lib/services/localApi";
-import { LoadingSpinner } from "../ui/LoadingSpinner";
+import { PriorityLevel, Task } from "@/lib/types";
 import { formatDateForDisplay } from "@/lib/utils/dateFormatting";
 import { PRIORITY_LEVELS, getPriorityStyles } from "@/lib/utils/priorityUtils";
 import { highlightText } from "@/lib/utils/searchUtils";
+import { useState } from "react";
 import toast from "react-hot-toast";
+import { LoadingSpinner } from "../ui/LoadingSpinner";
 
 interface TaskItemProps {
   task: Task;
   searchQuery?: string;
+  isSelected?: boolean;
+  onSelectionChange?: (taskId: string, isSelected: boolean) => void;
 }
 
-export function TaskItem({ task, searchQuery }: TaskItemProps) {
+export function TaskItem({
+  task,
+  searchQuery,
+  isSelected = false,
+  onSelectionChange,
+}: TaskItemProps) {
   const [updateTask] = useUpdateTaskMutation();
   const [deleteTask] = useDeleteTaskMutation();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -128,9 +135,21 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
     );
   };
 
+  const handleSelectionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onSelectionChange) {
+      onSelectionChange(task.id, e.target.checked);
+    }
+  };
+
   return (
     <div
-      className={`group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${getPriorityStyles(
+      data-testid={`task-item-${task.id}`}
+      data-selected={isSelected}
+      className={`group p-5 bg-gray-800 rounded-lg border-2 ${
+        isSelected
+          ? "border-blue-500 bg-blue-500/10"
+          : "border-gray-700 hover:border-gray-600"
+      } shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${getPriorityStyles(
         task.priority
       )}`}
     >
@@ -148,9 +167,23 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
                 onChange={handleToggle}
                 className="h-6 w-6 text-blue-500 rounded-md bg-gray-700 border-2 border-gray-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors hover:border-gray-500 cursor-pointer"
                 disabled={isUpdating || isDeleting}
+                aria-label="Mark task as completed"
               />
             )}
           </div>
+          {onSelectionChange && (
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={handleSelectionChange}
+                className="h-5 w-5 text-blue-500 rounded-md bg-gray-700 border-2 border-gray-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors hover:border-gray-500 cursor-pointer"
+                disabled={isUpdating || isDeleting}
+                aria-label="Select task for export"
+                data-testid={`selection-checkbox-${task.id}`}
+              />
+            </div>
+          )}
           <div className="flex-1">
             {renderTaskTitle()}
             <div>

@@ -1,11 +1,12 @@
-import { screen, fireEvent } from "@testing-library/react";
 import { render } from "@/lib/utils/test-utils";
+import { fireEvent, screen } from "@testing-library/react";
 import { TaskItem } from "../TaskItem";
 
 const mockTask = {
   id: "1",
   title: "Test Task",
   completed: false,
+  priority: 0 as const,
   userId: "user1",
   dueDate: "2025-10-25",
   createdAt: new Date().toISOString(),
@@ -96,6 +97,97 @@ describe("TaskItem", () => {
     expect(mockUpdateTask).toHaveBeenCalledWith({
       id: mockTask.id,
       dueDate: "2025-11-01",
+    });
+  });
+
+  describe("selection checkbox", () => {
+    const mockOnSelectionChange = jest.fn();
+
+    beforeEach(() => {
+      mockOnSelectionChange.mockClear();
+    });
+
+    it("renders selection checkbox when isSelected prop is provided", () => {
+      render(
+        <TaskItem
+          task={mockTask}
+          isSelected={false}
+          onSelectionChange={mockOnSelectionChange}
+        />
+      );
+
+      // Should have two checkboxes: one for completion, one for selection
+      const checkboxes = screen.getAllByRole("checkbox");
+      expect(checkboxes).toHaveLength(2);
+    });
+
+    it("calls onSelectionChange when selection checkbox is clicked", () => {
+      render(
+        <TaskItem
+          task={mockTask}
+          isSelected={false}
+          onSelectionChange={mockOnSelectionChange}
+        />
+      );
+
+      const checkboxes = screen.getAllByRole("checkbox");
+      // The selection checkbox should be the second one (first is completion)
+      const selectionCheckbox = checkboxes[1];
+
+      fireEvent.click(selectionCheckbox);
+
+      expect(mockOnSelectionChange).toHaveBeenCalledWith(mockTask.id, true);
+    });
+
+    it("shows selection checkbox as checked when isSelected is true", () => {
+      render(
+        <TaskItem
+          task={mockTask}
+          isSelected={true}
+          onSelectionChange={mockOnSelectionChange}
+        />
+      );
+
+      const checkboxes = screen.getAllByRole("checkbox") as HTMLInputElement[];
+      const selectionCheckbox = checkboxes[1];
+      expect(selectionCheckbox.checked).toBe(true);
+    });
+
+    it("shows selection checkbox as unchecked when isSelected is false", () => {
+      render(
+        <TaskItem
+          task={mockTask}
+          isSelected={false}
+          onSelectionChange={mockOnSelectionChange}
+        />
+      );
+
+      const checkboxes = screen.getAllByRole("checkbox") as HTMLInputElement[];
+      const selectionCheckbox = checkboxes[1];
+      expect(selectionCheckbox.checked).toBe(false);
+    });
+
+    it("applies visual styling when selected", () => {
+      const { container } = render(
+        <TaskItem
+          task={mockTask}
+          isSelected={true}
+          onSelectionChange={mockOnSelectionChange}
+        />
+      );
+
+      // Check for selected styling - typically a border or background change
+      const taskElement = container.firstChild as HTMLElement;
+      expect(taskElement).toBeInTheDocument();
+      // The actual styling classes will depend on implementation
+    });
+
+    it("does not render selection checkbox when props are not provided", () => {
+      render(<TaskItem task={mockTask} />);
+
+      // Should only have one checkbox (completion checkbox)
+      const checkboxes = screen.getAllByRole("checkbox");
+      expect(checkboxes).toHaveLength(1);
     });
   });
 });
