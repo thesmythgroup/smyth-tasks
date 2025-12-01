@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { RootState, PriorityLevel } from "@/lib/types";
+import { RootState, PriorityLevel, Task } from "@/lib/types";
 import { useGetTasksQuery } from "@/lib/services/localApi";
 import { TaskItem } from "./TaskItem";
 import { AddTaskForm } from "./AddTaskForm";
@@ -25,6 +25,9 @@ export function TaskList() {
     "all"
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
+    new Set()
+  );
 
   const filteredAndSortedTasks = useMemo(() => {
     let filteredTasks = [...tasks];
@@ -54,6 +57,34 @@ export function TaskList() {
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     });
   }, [tasks, priorityFilter, searchQuery]);
+
+  const handleTaskSelect = (taskId: string) => {
+    setSelectedTaskIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedTaskIds.size === filteredAndSortedTasks.length) {
+      setSelectedTaskIds(new Set());
+    } else {
+      setSelectedTaskIds(
+        new Set(filteredAndSortedTasks.map((task) => task.id))
+      );
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedTaskIds(new Set());
+  };
+
+  const isSelectionMode = selectedTaskIds.size > 0;
 
   if (!isAuthenticated) {
     return (
@@ -89,11 +120,30 @@ export function TaskList() {
 
       {tasks.length > 0 && (
         <div className="mb-6 space-y-4">
-          <div className="w-full max-w-md">
-            <TaskSearch
-              onSearchChange={setSearchQuery}
-              placeholder="Search tasks..."
-            />
+          <div className="flex items-center justify-between gap-4">
+            <div className="w-full max-w-md">
+              <TaskSearch
+                onSearchChange={setSearchQuery}
+                placeholder="Search tasks..."
+              />
+            </div>
+            {filteredAndSortedTasks.length > 0 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSelectAll}
+                  className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                >
+                  {selectedTaskIds.size === filteredAndSortedTasks.length
+                    ? "Deselect All"
+                    : "Select All"}
+                </button>
+                {isSelectionMode && (
+                  <span className="text-sm text-gray-400">
+                    {selectedTaskIds.size} selected
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
@@ -236,7 +286,13 @@ export function TaskList() {
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <TaskItem task={task} searchQuery={searchQuery} />
+                <TaskItem
+                  task={task}
+                  searchQuery={searchQuery}
+                  isSelected={selectedTaskIds.has(task.id)}
+                  onSelect={() => handleTaskSelect(task.id)}
+                  isSelectionMode={isSelectionMode}
+                />
               </motion.div>
             ))
           )}
