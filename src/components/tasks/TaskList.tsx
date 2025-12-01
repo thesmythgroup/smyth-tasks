@@ -3,12 +3,18 @@
 import { useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { RootState, PriorityLevel, Task } from "@/lib/types";
-import { useGetTasksQuery } from "@/lib/services/localApi";
+import {
+  useGetTasksQuery,
+  useBulkUpdateTasksMutation,
+  useBulkDeleteTasksMutation,
+} from "@/lib/services/localApi";
 import { TaskItem } from "./TaskItem";
 import { AddTaskForm } from "./AddTaskForm";
 import { TaskSearch } from "./TaskSearch";
+import { BulkActionsToolbar } from "./BulkActionsToolbar";
 import { LoadingSpinner } from "../ui/LoadingSpinner";
 import { ErrorMessage } from "../ui/ErrorMessage";
+import toast from "react-hot-toast";
 import {
   PRIORITY_LEVELS,
   getPriorityFilterStyles,
@@ -20,6 +26,8 @@ import { motion, AnimatePresence } from "framer-motion";
 export function TaskList() {
   const { data: tasks = [], isLoading, error } = useGetTasksQuery();
   const { isAuthenticated } = useSelector((state: RootState) => state.user);
+  const [bulkUpdateTasks] = useBulkUpdateTasksMutation();
+  const [bulkDeleteTasks] = useBulkDeleteTasksMutation();
 
   const [priorityFilter, setPriorityFilter] = useState<"all" | PriorityLevel>(
     "all"
@@ -28,6 +36,7 @@ export function TaskList() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
     new Set()
   );
+  const [isProcessingBulkAction, setIsProcessingBulkAction] = useState(false);
 
   const filteredAndSortedTasks = useMemo(() => {
     let filteredTasks = [...tasks];
@@ -84,6 +93,73 @@ export function TaskList() {
     setSelectedTaskIds(new Set());
   };
 
+  const handleBulkComplete = async () => {
+    if (selectedTaskIds.size === 0) return;
+
+    try {
+      setIsProcessingBulkAction(true);
+      const taskIdsArray = Array.from(selectedTaskIds);
+      await bulkUpdateTasks({
+        taskIds: taskIdsArray,
+        updates: { completed: true },
+      }).unwrap();
+      toast.success(
+        `Successfully completed ${taskIdsArray.length} task${
+          taskIdsArray.length !== 1 ? "s" : ""
+        }`
+      );
+      handleClearSelection();
+    } catch (error) {
+      toast.error("Failed to complete tasks. Please try again.");
+    } finally {
+      setIsProcessingBulkAction(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTaskIds.size === 0) return;
+
+    try {
+      setIsProcessingBulkAction(true);
+      const taskIdsArray = Array.from(selectedTaskIds);
+      await bulkDeleteTasks(taskIdsArray).unwrap();
+      toast.success(
+        `Successfully deleted ${taskIdsArray.length} task${
+          taskIdsArray.length !== 1 ? "s" : ""
+        }`
+      );
+      handleClearSelection();
+    } catch (error) {
+      toast.error("Failed to delete tasks. Please try again.");
+    } finally {
+      setIsProcessingBulkAction(false);
+    }
+  };
+
+  const handleBulkPriorityUpdate = async (priority: PriorityLevel) => {
+    if (selectedTaskIds.size === 0) return;
+
+    try {
+      setIsProcessingBulkAction(true);
+      const taskIdsArray = Array.from(selectedTaskIds);
+      await bulkUpdateTasks({
+        taskIds: taskIdsArray,
+        updates: { priority },
+      }).unwrap();
+      const priorityName = PRIORITY_LEVELS[priority].displayText;
+      toast.success(
+        `Successfully updated priority to ${priorityName} for ${taskIdsArray.length} task${
+          taskIdsArray.length !== 1 ? "s" : ""
+        }`
+      );
+      handleClearSelection();
+    } catch (error) {
+      toast.error("Failed to update priority. Please try again.");
+    } finally {
+      setIsProcessingBulkAction(false);
+    }
+  };
+
   const isSelectionMode = selectedTaskIds.size > 0;
 
   if (!isAuthenticated) {
@@ -117,6 +193,17 @@ export function TaskList() {
   return (
     <div className="max-w-3xl mx-auto">
       <AddTaskForm />
+
+      {isSelectionMode && (
+        <BulkActionsToolbar
+          selectedCount={selectedTaskIds.size}
+          onComplete={handleBulkComplete}
+          onDelete={handleBulkDelete}
+          onPriorityUpdate={handleBulkPriorityUpdate}
+          onClearSelection={handleClearSelection}
+          isProcessing={isProcessingBulkAction}
+        />
+      )}
 
       {tasks.length > 0 && (
         <div className="mb-6 space-y-4">
