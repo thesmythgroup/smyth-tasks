@@ -15,9 +15,18 @@ import toast from "react-hot-toast";
 interface TaskItemProps {
   task: Task;
   searchQuery?: string;
+  isSelected?: boolean;
+  onSelect?: () => void;
+  isSelectionMode?: boolean;
 }
 
-export function TaskItem({ task, searchQuery }: TaskItemProps) {
+export function TaskItem({
+  task,
+  searchQuery,
+  isSelected = false,
+  onSelect,
+  isSelectionMode = false,
+}: TaskItemProps) {
   const [updateTask] = useUpdateTaskMutation();
   const [deleteTask] = useDeleteTaskMutation();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -130,12 +139,25 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
 
   return (
     <div
-      className={`group p-5 bg-gray-800 rounded-lg border-2 border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${getPriorityStyles(
-        task.priority
-      )}`}
+      className={`group p-5 bg-gray-800 rounded-lg border-2 transition-all duration-200 transform hover:-translate-y-0.5 border-l-4 ${
+        isSelected
+          ? "border-blue-500 bg-gray-800/80 shadow-xl"
+          : "border-gray-700 hover:border-gray-600 shadow-lg hover:shadow-xl"
+      } ${getPriorityStyles(task.priority)}`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4 flex-1">
+          {isSelectionMode && (
+            <div className="relative">
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={onSelect}
+                className="h-6 w-6 text-blue-500 rounded-md bg-gray-700 border-2 border-gray-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors hover:border-gray-500 cursor-pointer"
+                disabled={isUpdating || isDeleting}
+              />
+            </div>
+          )}
           <div className="relative">
             {isUpdating ? (
               <div className="h-6 w-6 flex items-center justify-center">
@@ -147,7 +169,7 @@ export function TaskItem({ task, searchQuery }: TaskItemProps) {
                 checked={task.completed}
                 onChange={handleToggle}
                 className="h-6 w-6 text-blue-500 rounded-md bg-gray-700 border-2 border-gray-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-colors hover:border-gray-500 cursor-pointer"
-                disabled={isUpdating || isDeleting}
+                disabled={isUpdating || isDeleting || isSelectionMode}
               />
             )}
           </div>
